@@ -1,22 +1,24 @@
 import Link from "next/link";
 import { getAllPosts, getAllCategories } from "@/lib/store";
-import { getSiteSettings, getApprovedFriendLinks, getEnabledProducts } from "@/lib/settings";
+import { getSiteSettings, getApprovedFriendLinks, getEnabledProducts, getPaymentSettings } from "@/lib/settings";
 import type { Category } from "@/lib/types";
 import OwnerCard from "@/components/OwnerCard";
 import PostToc from "@/components/PostToc";
 import FriendLinks from "@/components/FriendLinks";
 import ProductPromos from "@/components/ProductPromos";
+import DonateCard from "@/components/DonateCard";
 
 // ISR：每 60 秒重新验证
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [posts, categories, site, friendLinks, products] = await Promise.all([
+  const [posts, categories, site, friendLinks, products, payment] = await Promise.all([
     getAllPosts(),
     getAllCategories(),
     getSiteSettings(),
     getApprovedFriendLinks(),
     getEnabledProducts(),
+    getPaymentSettings(),
   ]);
 
   const categoryMap = new Map<string, Category>(
@@ -168,6 +170,15 @@ export default async function HomePage() {
           <PostToc posts={posts} />
           <FriendLinks links={friendLinks} siteName={site.siteName} />
           <ProductPromos products={products} />
+          {payment.donate.enabled && (payment.donate.wechatQr || payment.donate.alipayQr) && (
+            <DonateCard
+              title={payment.donate.title}
+              desc={payment.donate.desc}
+              wechatQr={payment.donate.wechatQr}
+              alipayQr={payment.donate.alipayQr}
+              variant="compact"
+            />
+          )}
         </aside>
       </div>
     </div>

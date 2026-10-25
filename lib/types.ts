@@ -227,10 +227,8 @@ export interface PaymentSettings {
     enabled: boolean;
     title: string;
     desc: string; // 赞赏说明文案
-    amounts: number[];
-    customAmount: boolean;
-    wechatQr: string; // 微信收款码图片 URL（免签约扫码）
-    alipayQr: string; // 支付宝收款码图片 URL（免签约扫码）
+    wechatQr: string; // 微信收款码图片 URL
+    alipayQr: string; // 支付宝收款码图片 URL
   };
 }
 
@@ -260,8 +258,6 @@ export const defaultPaymentSettings: PaymentSettings = {
     enabled: false,
     title: "赞赏支持",
     desc: "如果文章对你有帮助，可以请我喝杯咖啡~",
-    amounts: [5, 10, 20, 50, 100],
-    customAmount: true,
     wechatQr: "",
     alipayQr: "",
   },

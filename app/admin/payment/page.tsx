@@ -60,7 +60,7 @@ export default function PaymentPage() {
   function updateAlipay(key: keyof PaymentSettings["alipay"], value: string | boolean) {
     setPayment({ ...payment!, alipay: { ...payment!.alipay, [key]: value } });
   }
-  function updateDonate(key: keyof PaymentSettings["donate"], value: string | number | number[] | boolean) {
+  function updateDonate(key: keyof PaymentSettings["donate"], value: string | boolean) {
     setPayment({ ...payment!, donate: { ...payment!.donate, [key]: value } });
   }
 
@@ -155,19 +155,6 @@ export default function PaymentPage() {
                   <label className={labelCls}>赞赏标题</label>
                   <input className={inputCls} value={payment.donate.title} onChange={(e) => updateDonate("title", e.target.value)} />
                 </div>
-                <div>
-                  <label className={labelCls}>预设金额（逗号分隔）</label>
-                  <input
-                    className={inputCls}
-                    value={payment.donate.amounts.join(",")}
-                    onChange={(e) =>
-                      updateDonate(
-                        "amounts",
-                        e.target.value.split(",").map((n) => Number(n.trim())).filter((n) => n > 0)
-                      )
-                    }
-                  />
-                </div>
               </div>
               <div>
                 <label className={labelCls}>赞赏说明文案</label>
@@ -178,27 +165,33 @@ export default function PaymentPage() {
                   placeholder="如果文章对你有帮助，可以请我喝杯咖啡~"
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  className="accent-pink-500"
-                  checked={payment.donate.customAmount}
-                  onChange={(e) => updateDonate("customAmount", e.target.checked)}
-                />
-                允许自定义金额
-              </label>
               <div className="border-t border-pink-100 pt-4">
-                <p className="text-xs text-gray-500 mb-3">
-                  💡 静态收款码：无需签约支付接口，读者扫码后手动转账。配置后将在赞赏弹窗中展示。
+                <p className="text-xs text-gray-500 mb-1">
+                  💡 自定义收款码：上传微信/支付宝收款码图片，读者扫码即可转账赞赏，无需签约支付接口。
+                </p>
+                <p className="text-xs text-gray-400 mb-3">
+                  赞赏将自动展示在首页侧边栏、每篇文章底部和赞赏页面（/donate）
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>微信收款码图片 URL</label>
                     <input className={inputCls} value={payment.donate.wechatQr} onChange={(e) => updateDonate("wechatQr", e.target.value)} placeholder="https://...jpg/png" />
+                    {payment.donate.wechatQr && (
+                      <div className="mt-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={payment.donate.wechatQr} alt="微信收款码预览" className="w-24 h-24 rounded-lg border border-pink-100 object-contain" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>支付宝收款码图片 URL</label>
                     <input className={inputCls} value={payment.donate.alipayQr} onChange={(e) => updateDonate("alipayQr", e.target.value)} placeholder="https://...jpg/png" />
+                    {payment.donate.alipayQr && (
+                      <div className="mt-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={payment.donate.alipayQr} alt="支付宝收款码预览" className="w-24 h-24 rounded-lg border border-pink-100 object-contain" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

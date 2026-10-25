@@ -10,7 +10,7 @@ import {
 import { getPaymentSettings } from "@/lib/settings";
 import { verifyToken } from "@/lib/auth";
 import { marked } from "marked";
-import DonateButton from "@/components/DonateButton";
+import DonateCard from "@/components/DonateCard";
 import PaywallCard from "@/components/PaywallCard";
 import Comments from "@/components/Comments";
 import type { Category } from "@/lib/types";
@@ -91,11 +91,7 @@ export default async function PostPage({
   const showDonate =
     !needPaywall &&
     payment.donate.enabled &&
-    (payment.epay.enabled ||
-      payment.wechat.enabled ||
-      payment.alipay.enabled ||
-      payment.donate.wechatQr ||
-      payment.donate.alipayQr);
+    !!(payment.donate.wechatQr || payment.donate.alipayQr);
 
   return (
     <article className="max-w-3xl mx-auto">
@@ -213,19 +209,15 @@ export default async function PostPage({
       )}
 
       {showDonate && (
-        <DonateButton
-          title={payment.donate.title}
-          desc={payment.donate.desc}
-          amounts={payment.donate.amounts}
-          customAmount={payment.donate.customAmount}
-          wechatQr={payment.donate.wechatQr}
-          alipayQr={payment.donate.alipayQr}
-          channels={{
-            epay: payment.epay.enabled,
-            wechat: payment.wechat.enabled,
-            alipay: payment.alipay.enabled,
-          }}
-        />
+        <div className="mt-10">
+          <DonateCard
+            title={payment.donate.title}
+            desc={payment.donate.desc}
+            wechatQr={payment.donate.wechatQr}
+            alipayQr={payment.donate.alipayQr}
+            variant="full"
+          />
+        </div>
       )}
 
       <Comments

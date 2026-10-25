@@ -51,6 +51,9 @@ export default async function RootLayout({
                 <Link href="/" className="text-gray-500 hover:text-pink-600 transition-colors">
                   首页
                 </Link>
+                <Link href="/donate" className="text-gray-500 hover:text-pink-600 transition-colors">
+                  赞赏
+                </Link>
                 <Link href="/admin" className="text-gray-500 hover:text-pink-600 transition-colors">
                   管理
                 </Link>
