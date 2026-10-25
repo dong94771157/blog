@@ -6,6 +6,8 @@ import {
   AISettings,
   Order,
   Comment,
+  FriendLink,
+  ProductPromo,
   defaultSiteSettings,
   defaultNotifySettings,
   defaultPaymentSettings,
@@ -19,6 +21,8 @@ const KEY_PAYMENT = "settings:payment";
 const KEY_AI = "settings:ai";
 const ORDER_PREFIX = "order:";
 const COMMENT_PREFIX = "comment:";
+const FRIEND_PREFIX = "friend:";
+const PRODUCT_PREFIX = "product:";
 
 // 深度合并（保留默认值中用户未覆盖的字段）
 function deepMerge<T>(defaults: T, overrides: Partial<T>): T {
@@ -221,3 +225,151 @@ export async function getAllComments(): Promise<Comment[]> {
   }
   return comments.sort((a, b) => b.createdAt - a.createdAt);
 }
+
+// ---- 友情链接 ----
+function genId(prefix: string): string {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export async function createFriendLink(link: FriendLink): Promise<void> {
+  const kv = getKV();
+  await kv.put(`${FRIEND_PREFIX}${link.id}`, JSON.stringify(link));
+}
+
+export async function getFriendLink(id: string): Promise<FriendLink | null> {
+  const kv = getKV();
+  const raw = await kv.get(`${FRIEND_PREFIX}${id}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as FriendLink;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateFriendLink(id: string, updates: Partial<FriendLink>): Promise<FriendLink | null> {
+  const existing = await getFriendLink(id);
+  if (!existing) return null;
+  const kv = getKV();
+  const updated = { ...existing, ...updates };
+  await kv.put(`${FRIEND_PREFIX}${id}`, JSON.stringify(updated));
+  return updated;
+}
+
+export async function deleteFriendLink(id: string): Promise<boolean> {
+  const existing = await getFriendLink(id);
+  if (!existing) return false;
+  const kv = getKV();
+  await kv.delete(`${FRIEND_PREFIX}${id}`);
+  return true;
+}
+
+/** 公开：只返回已通过的友链 */
+export async function getApprovedFriendLinks(): Promise<FriendLink[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: FRIEND_PREFIX, limit: 256 });
+  const links: FriendLink[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        const l = JSON.parse(raw) as FriendLink;
+        if (l.status === "approved") links.push(l);
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return links.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/** 管理：返回全部友链 */
+export async function getAllFriendLinks(): Promise<FriendLink[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: FRIEND_PREFIX, limit: 256 });
+  const links: FriendLink[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        links.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return links.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+// ---- 产品/服务推荐 ----
+export async function createProduct(product: ProductPromo): Promise<void> {
+  const kv = getKV();
+  await kv.put(`${PRODUCT_PREFIX}${product.id}`, JSON.stringify(product));
+}
+
+export async function getProduct(id: string): Promise<ProductPromo | null> {
+  const kv = getKV();
+  const raw = await kv.get(`${PRODUCT_PREFIX}${id}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ProductPromo;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateProduct(id: string, updates: Partial<ProductPromo>): Promise<ProductPromo | null> {
+  const existing = await getProduct(id);
+  if (!existing) return null;
+  const kv = getKV();
+  const updated = { ...existing, ...updates };
+  await kv.put(`${PRODUCT_PREFIX}${id}`, JSON.stringify(updated));
+  return updated;
+}
+
+export async function deleteProduct(id: string): Promise<boolean> {
+  const existing = await getProduct(id);
+  if (!existing) return false;
+  const kv = getKV();
+  await kv.delete(`${PRODUCT_PREFIX}${id}`);
+  return true;
+}
+
+/** 公开：返回已启用的产品（按 sort 排序） */
+export async function getEnabledProducts(): Promise<ProductPromo[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: PRODUCT_PREFIX, limit: 256 });
+  const products: ProductPromo[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as ProductPromo;
+        if (p.enabled) products.push(p);
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return products.sort((a, b) => a.sort - b.sort || b.createdAt - a.createdAt);
+}
+
+/** 管理：返回全部产品 */
+export async function getAllProducts(): Promise<ProductPromo[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: PRODUCT_PREFIX, limit: 256 });
+  const products: ProductPromo[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        products.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return products.sort((a, b) => a.sort - b.sort || b.createdAt - a.createdAt);
+}
+
+export { genId };

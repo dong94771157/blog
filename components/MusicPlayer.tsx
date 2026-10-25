@@ -63,6 +63,13 @@ export default function MusicPlayer() {
     }
   }, [expanded, songs.length, loadSongs]);
 
+  // 监听外部唤起事件（首页站长卡片等触发）
+  useEffect(() => {
+    const handler = () => setExpanded(true);
+    window.addEventListener("open-music-player", handler);
+    return () => window.removeEventListener("open-music-player", handler);
+  }, []);
+
   // 播放/暂停
   useEffect(() => {
     const audio = audioRef.current;

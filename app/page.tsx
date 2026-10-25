@@ -1,16 +1,22 @@
 import Link from "next/link";
 import { getAllPosts, getAllCategories } from "@/lib/store";
-import { getSiteSettings } from "@/lib/settings";
+import { getSiteSettings, getApprovedFriendLinks, getEnabledProducts } from "@/lib/settings";
 import type { Category } from "@/lib/types";
+import OwnerCard from "@/components/OwnerCard";
+import PostToc from "@/components/PostToc";
+import FriendLinks from "@/components/FriendLinks";
+import ProductPromos from "@/components/ProductPromos";
 
 // ISR：每 60 秒重新验证
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [posts, categories, site] = await Promise.all([
+  const [posts, categories, site, friendLinks, products] = await Promise.all([
     getAllPosts(),
     getAllCategories(),
     getSiteSettings(),
+    getApprovedFriendLinks(),
+    getEnabledProducts(),
   ]);
 
   const categoryMap = new Map<string, Category>(
@@ -37,119 +43,133 @@ export default async function HomePage() {
         </p>
       </div>
 
-      {/* 分类导航 */}
-      {categories.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-8">
-          <Link
-            href="/"
-            className="px-4 py-1.5 rounded-full text-sm font-medium bg-pink-500 text-white shadow-sm hover:bg-pink-600 transition-colors"
-          >
-            全部
-          </Link>
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/categories/${cat.slug}`}
-              className="px-4 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-600 border border-pink-200 hover:border-pink-400 hover:text-pink-600 transition-colors"
-            >
-              {cat.name}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {posts.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
-          <div className="text-6xl mb-4">(´；ω；`)</div>
-          <p className="text-lg">还没有文章呢～</p>
-          <Link
-            href="/admin"
-            className="mt-4 inline-block text-pink-500 hover:text-pink-700 underline"
-          >
-            前往后台发布第一篇文章 →
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {posts.map((post) => {
-            const cat = post.categoryId ? categoryMap.get(post.categoryId) : null;
-            return (
-              <article
-                key={post.id}
-                className="group bg-white/80 backdrop-blur rounded-2xl border border-pink-100 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-pink-100 hover:-translate-y-1 transition-all duration-300"
+      {/* 双栏布局 */}
+      <div className="flex gap-8 items-start">
+        {/* 左侧：文章列表 */}
+        <div className="flex-1 min-w-0">
+          {/* 分类导航 */}
+          {categories.length > 0 && (
+            <div className="flex gap-2 flex-wrap mb-8">
+              <Link
+                href="/"
+                className="px-4 py-1.5 rounded-full text-sm font-medium bg-pink-500 text-white shadow-sm hover:bg-pink-600 transition-colors"
               >
-                <Link href={`/posts/${post.slug}`}>
-                  {/* 封面 */}
-                  {post.coverUrl ? (
-                    <div className="aspect-[16/9] overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.coverUrl}
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-[16/9] flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-100 to-purple-100">
-                      <span className="text-5xl opacity-60 group-hover:scale-110 transition-transform duration-500">
-                        🌸
-                      </span>
-                    </div>
-                  )}
+                全部
+              </Link>
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/categories/${cat.slug}`}
+                  className="px-4 py-1.5 rounded-full text-sm font-medium bg-white/80 text-gray-600 border border-pink-200 hover:border-pink-400 hover:text-pink-600 transition-colors"
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+          )}
 
-                  <div className="p-5">
-                    {/* 分类 + 付费标记 */}
-                    <div className="flex items-center gap-2 mb-2">
-                      {cat && (
-                        <span
-                          className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                          style={{ backgroundColor: cat.color }}
-                        >
-                          {cat.name}
-                        </span>
-                      )}
-                      {post.paid && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
-                          🔒 ¥{post.price}
-                        </span>
-                      )}
-                    </div>
-
-                    <h2 className="text-lg font-bold text-gray-800 group-hover:text-pink-600 transition-colors line-clamp-2">
-                      {post.title}
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-500 leading-relaxed line-clamp-2">
-                      {post.excerpt}
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-between">
-                      <time className="text-xs text-gray-400">
-                        {new Date(post.createdAt).toLocaleDateString("zh-CN", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </time>
-                      {post.tags.length > 0 && (
-                        <div className="flex gap-1.5">
-                          {post.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="bg-pink-50 text-pink-500 px-2 py-0.5 rounded-full text-xs"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
+          {posts.length === 0 ? (
+            <div className="text-center py-24 text-gray-400">
+              <div className="text-6xl mb-4">(´；ω；`)</div>
+              <p className="text-lg">还没有文章呢～</p>
+              <Link
+                href="/admin"
+                className="mt-4 inline-block text-pink-500 hover:text-pink-700 underline"
+              >
+                前往后台发布第一篇文章 →
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {posts.map((post) => {
+                const cat = post.categoryId ? categoryMap.get(post.categoryId) : null;
+                return (
+                  <article
+                    key={post.id}
+                    className="group bg-white/80 backdrop-blur rounded-2xl border border-pink-100 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-pink-100 hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <Link href={`/posts/${post.slug}`}>
+                      {/* 封面 */}
+                      {post.coverUrl ? (
+                        <div className="aspect-[16/9] overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={post.coverUrl}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                      ) : (
+                        <div className="aspect-[16/9] flex items-center justify-center bg-gradient-to-br from-pink-100 via-rose-100 to-purple-100">
+                          <span className="text-5xl opacity-60 group-hover:scale-110 transition-transform duration-500">
+                            🌸
+                          </span>
                         </div>
                       )}
-                    </div>
-                  </div>
-                </Link>
-              </article>
-            );
-          })}
+
+                      <div className="p-5">
+                        {/* 分类 + 付费标记 */}
+                        <div className="flex items-center gap-2 mb-2">
+                          {cat && (
+                            <span
+                              className="px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
+                              style={{ backgroundColor: cat.color }}
+                            >
+                              {cat.name}
+                            </span>
+                          )}
+                          {post.paid && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                              🔒 ¥{post.price}
+                            </span>
+                          )}
+                        </div>
+
+                        <h2 className="text-lg font-bold text-gray-800 group-hover:text-pink-600 transition-colors line-clamp-2">
+                          {post.title}
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-500 leading-relaxed line-clamp-2">
+                          {post.excerpt}
+                        </p>
+
+                        <div className="mt-4 flex items-center justify-between">
+                          <time className="text-xs text-gray-400">
+                            {new Date(post.createdAt).toLocaleDateString("zh-CN", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </time>
+                          {post.tags.length > 0 && (
+                            <div className="flex gap-1.5">
+                              {post.tags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="bg-pink-50 text-pink-500 px-2 py-0.5 rounded-full text-xs"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* 右侧：侧边栏 */}
+        <aside className="hidden lg:block w-80 flex-shrink-0 space-y-6 sticky top-24">
+          <OwnerCard site={site} />
+          <PostToc posts={posts} />
+          <FriendLinks links={friendLinks} siteName={site.siteName} />
+          <ProductPromos products={products} />
+        </aside>
+      </div>
     </div>
   );
 }

@@ -109,6 +109,9 @@ export interface SiteSettings {
   // 功能开关
   commentEnabled: boolean; // 留言功能开关
   registrationEnabled: boolean; // 读者注册开关
+  // 站长挂件
+  avatarUrl: string; // 挂件头像（留空使用默认伤感男孩形象）
+  ownerBio: string; // 站长一句话简介
   // 页脚
   footerText: string; // 自定义页脚文案（留空显示默认）
   contact: {
@@ -118,6 +121,7 @@ export interface SiteSettings {
     telegram: string;
     qq: string;
     wechat: string;
+    bilibili: string; // B站主页
   };
 }
 
@@ -133,6 +137,8 @@ export const defaultSiteSettings: SiteSettings = {
   commentEnabled: true,
   registrationEnabled: true,
   footerText: "",
+  avatarUrl: "",
+  ownerBio: "一个深夜写代码的伤感男孩，用文字记录孤独与温柔。",
   contact: {
     email: "",
     github: "",
@@ -140,6 +146,7 @@ export const defaultSiteSettings: SiteSettings = {
     telegram: "",
     qq: "",
     wechat: "",
+    bilibili: "",
   },
 };
 
@@ -320,5 +327,30 @@ export interface Comment {
     reason: string;
     category: string;
   } | null;
+  createdAt: number;
+}
+
+// ===== 友情链接 =====
+export interface FriendLink {
+  id: string;
+  name: string; // 站点名称
+  url: string; // 站点地址
+  logo: string; // 站点 Logo/头像 URL（可选）
+  desc: string; // 站点描述
+  status: "pending" | "approved" | "rejected";
+  createdAt: number;
+}
+
+// ===== 产品/服务推荐 =====
+export interface ProductPromo {
+  id: string;
+  title: string; // 产品名称
+  desc: string; // 推荐语
+  image: string; // 封面图 URL
+  url: string; // 购买/了解链接
+  price: string; // 价格描述（如 "¥99/年" / "免费"）
+  badge: string; // 角标（如 "限时优惠" / "推荐"）
+  sort: number; // 排序（越小越靠前）
+  enabled: boolean; // 是否展示
   createdAt: number;
 }

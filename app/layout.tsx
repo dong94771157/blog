@@ -31,13 +31,14 @@ export default async function RootLayout({
     contact.twitter ||
     contact.telegram ||
     contact.qq ||
-    contact.wechat;
+    contact.wechat ||
+    contact.bilibili;
 
   return (
     <html lang="zh-CN">
       <body>
         <header className="sticky top-0 z-40 border-b border-pink-100 bg-white/80 backdrop-blur-md">
-          <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80 transition-opacity">
               {site.logoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -58,11 +59,11 @@ export default async function RootLayout({
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-3xl px-4 py-8 min-h-[calc(100vh-140px)]">
+        <main className="mx-auto max-w-6xl px-4 py-8 min-h-[calc(100vh-140px)]">
           {children}
         </main>
         <footer className="border-t border-pink-100 bg-white/60 backdrop-blur">
-          <div className="mx-auto max-w-3xl px-4 py-6 text-center text-sm text-gray-400 space-y-2">
+          <div className="mx-auto max-w-6xl px-4 py-6 text-center text-sm text-gray-400 space-y-2">
             {hasContact && (
               <div className="flex justify-center gap-4 text-xs">
                 {contact.email && (
@@ -76,6 +77,9 @@ export default async function RootLayout({
                 )}
                 {contact.telegram && (
                   <a href={contact.telegram} target="_blank" rel="noopener noreferrer" className="hover:text-pink-500 transition-colors">Telegram</a>
+                )}
+                {contact.bilibili && (
+                  <a href={contact.bilibili.startsWith("http") ? contact.bilibili : `https://space.bilibili.com/${contact.bilibili}`} target="_blank" rel="noopener noreferrer" className="hover:text-pink-500 transition-colors">B站</a>
                 )}
                 {contact.qq && <span>QQ: {contact.qq}</span>}
                 {contact.wechat && <span>微信: {contact.wechat}</span>}

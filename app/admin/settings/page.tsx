@@ -177,6 +177,27 @@ function SiteForm({
         </div>
       </div>
 
+      {/* 站长挂件 */}
+      <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-xl">🧑</span>
+          <h3 className="font-medium text-gray-800">站长挂件</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          显示在首页侧边栏的站长信息卡片，含头像、简介、社交链接和音乐入口
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>头像 URL</label>
+            <input className={inputCls} value={site.avatarUrl} onChange={(e) => update("avatarUrl", e.target.value)} placeholder="https://... 留空使用默认伤感男孩头像" />
+          </div>
+          <div>
+            <label className={labelCls}>站长简介</label>
+            <input className={inputCls} value={site.ownerBio} onChange={(e) => update("ownerBio", e.target.value)} placeholder="一句话介绍自己" />
+          </div>
+        </div>
+      </div>
+
       {/* 功能开关 */}
       <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
@@ -252,6 +273,10 @@ function SiteForm({
           <div>
             <label className={labelCls}>微信</label>
             <input className={inputCls} value={site.contact.wechat} onChange={(e) => updateContact("wechat", e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls}>B站</label>
+            <input className={inputCls} value={site.contact.bilibili} onChange={(e) => updateContact("bilibili", e.target.value)} placeholder="UID 或完整空间地址" />
           </div>
         </div>
       </div>

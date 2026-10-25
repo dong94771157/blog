@@ -98,7 +98,7 @@ export default async function PostPage({
       payment.donate.alipayQr);
 
   return (
-    <article>
+    <article className="max-w-3xl mx-auto">
       <Link
         href="/"
         className="text-sm text-gray-400 hover:text-pink-600 mb-6 inline-block transition-colors"

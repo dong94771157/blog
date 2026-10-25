@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { href: "/admin/orders", label: "订单管理", icon: "💰" },
   { href: "/admin/payment", label: "支付配置", icon: "💳" },
   { href: "/admin/comments", label: "留言管理", icon: "💬" },
+  { href: "/admin/friends", label: "友链管理", icon: "🔗" },
+  { href: "/admin/products", label: "产品推荐", icon: "✨" },
   { href: "/admin/notify", label: "通知管理", icon: "🔔" },
   { href: "/admin/settings", label: "系统设置", icon: "⚙️" },
 ];
