@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface DonateCardProps {
   title: string;
@@ -21,11 +21,18 @@ export default function DonateCard({
   const [tab, setTab] = useState<"wechat" | "alipay">(
     wechatQr ? "wechat" : "alipay"
   );
+  const [imgError, setImgError] = useState(false);
+
+  const currentQr = tab === "wechat" ? wechatQr : alipayQr;
+
+  // 切换二维码时重置错误状态
+  useEffect(() => {
+    setImgError(false);
+  }, [currentQr]);
 
   if (!wechatQr && !alipayQr) return null;
 
   const hasBoth = !!(wechatQr && alipayQr);
-  const currentQr = tab === "wechat" ? wechatQr : alipayQr;
   const isFull = variant === "full";
 
   return (
@@ -82,15 +89,28 @@ export default function DonateCard({
       )}
 
       {/* 二维码图片 */}
-      <div className={`flex justify-center mt-4 ${isFull ? "" : ""}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={currentQr}
-          alt={tab === "wechat" ? "微信收款码" : "支付宝收款码"}
-          className={`rounded-xl border-2 border-pink-100 object-contain ${
-            isFull ? "w-64 h-64" : "w-40 h-40"
-          }`}
-        />
+      <div className="flex justify-center mt-4">
+        {imgError || !currentQr ? (
+          <div
+            className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-pink-200 bg-pink-50/50 text-gray-400 ${
+              isFull ? "w-64 h-64" : "w-40 h-40"
+            }`}
+          >
+            <span className="text-3xl mb-1">(´；ω；`)</span>
+            <span className="text-xs">二维码加载失败</span>
+          </div>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={currentQr}
+            alt={tab === "wechat" ? "微信收款码" : "支付宝收款码"}
+            referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
+            className={`rounded-xl border-2 border-pink-100 object-contain bg-white ${
+              isFull ? "w-64 h-64" : "w-40 h-40"
+            }`}
+          />
+        )}
       </div>
 
       {/* 提示文字 */}

@@ -9,10 +9,47 @@ const labelCls = "block text-sm font-medium text-gray-700 mb-1";
 const btnCls =
   "bg-gradient-to-r from-pink-500 to-purple-500 text-white px-5 py-2 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50";
 
+/** 读取图片文件并压缩为 data URL（最长边 maxSize，PNG 保证二维码清晰） */
+function fileToQrDataUrl(file: File, maxSize = 600): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("请选择图片文件"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("读取文件失败"));
+    reader.onload = () => {
+      const img = document.createElement("img");
+      img.onerror = () => reject(new Error("图片解析失败"));
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(reader.result as string);
+          return;
+        }
+        // 白色背景，防止透明 PNG 在部分场景下不可见
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function PaymentPage() {
   const [payment, setPayment] = useState<PaymentSettings | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [uploading, setUploading] = useState<"wechat" | "alipay" | null>(null);
 
   useEffect(() => {
     fetch("/api/settings?type=payment")
@@ -62,6 +99,26 @@ export default function PaymentPage() {
   }
   function updateDonate(key: keyof PaymentSettings["donate"], value: string | boolean) {
     setPayment({ ...payment!, donate: { ...payment!.donate, [key]: value } });
+  }
+
+  async function handleQrUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    key: "wechatQr" | "alipayQr"
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const which = key === "wechatQr" ? "wechat" : "alipay";
+    setUploading(which);
+    try {
+      const dataUrl = await fileToQrDataUrl(file);
+      updateDonate(key, dataUrl);
+      flash("收款码已上传，记得点击保存");
+    } catch (err) {
+      flash(err instanceof Error ? err.message : "上传失败");
+    } finally {
+      setUploading(null);
+      e.target.value = "";
+    }
   }
 
   if (!payment) {
@@ -174,22 +231,42 @@ export default function PaymentPage() {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>微信收款码图片 URL</label>
-                    <input className={inputCls} value={payment.donate.wechatQr} onChange={(e) => updateDonate("wechatQr", e.target.value)} placeholder="https://...jpg/png" />
+                    <label className={labelCls}>微信收款码图片</label>
+                    <input className={inputCls} value={payment.donate.wechatQr} onChange={(e) => updateDonate("wechatQr", e.target.value)} placeholder="粘贴图片 URL，或点击下方上传" />
+                    <div className="mt-2 flex items-center gap-2">
+                      <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100 transition-colors ${uploading === "wechat" ? "opacity-60 pointer-events-none" : ""}`}>
+                        <span>📤</span> {uploading === "wechat" ? "上传中..." : "上传图片"}
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQrUpload(e, "wechatQr")} disabled={uploading === "wechat"} />
+                      </label>
+                      {payment.donate.wechatQr && (
+                        <button onClick={() => updateDonate("wechatQr", "")} className="text-xs text-gray-400 hover:text-red-400 transition-colors">清除</button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1.5">💡 推荐直接上传图片文件，可避免图床防盗链导致二维码无法显示</p>
                     {payment.donate.wechatQr && (
                       <div className="mt-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={payment.donate.wechatQr} alt="微信收款码预览" className="w-24 h-24 rounded-lg border border-pink-100 object-contain" />
+                        <img src={payment.donate.wechatQr} alt="微信收款码预览" referrerPolicy="no-referrer" className="w-24 h-24 rounded-lg border border-pink-100 object-contain bg-white" />
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className={labelCls}>支付宝收款码图片 URL</label>
-                    <input className={inputCls} value={payment.donate.alipayQr} onChange={(e) => updateDonate("alipayQr", e.target.value)} placeholder="https://...jpg/png" />
+                    <label className={labelCls}>支付宝收款码图片</label>
+                    <input className={inputCls} value={payment.donate.alipayQr} onChange={(e) => updateDonate("alipayQr", e.target.value)} placeholder="粘贴图片 URL，或点击下方上传" />
+                    <div className="mt-2 flex items-center gap-2">
+                      <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-pink-50 text-pink-600 border border-pink-200 hover:bg-pink-100 transition-colors ${uploading === "alipay" ? "opacity-60 pointer-events-none" : ""}`}>
+                        <span>📤</span> {uploading === "alipay" ? "上传中..." : "上传图片"}
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleQrUpload(e, "alipayQr")} disabled={uploading === "alipay"} />
+                      </label>
+                      {payment.donate.alipayQr && (
+                        <button onClick={() => updateDonate("alipayQr", "")} className="text-xs text-gray-400 hover:text-red-400 transition-colors">清除</button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1.5">💡 推荐直接上传图片文件，可避免图床防盗链导致二维码无法显示</p>
                     {payment.donate.alipayQr && (
                       <div className="mt-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={payment.donate.alipayQr} alt="支付宝收款码预览" className="w-24 h-24 rounded-lg border border-pink-100 object-contain" />
+                        <img src={payment.donate.alipayQr} alt="支付宝收款码预览" referrerPolicy="no-referrer" className="w-24 h-24 rounded-lg border border-pink-100 object-contain bg-white" />
                       </div>
                     )}
                   </div>
