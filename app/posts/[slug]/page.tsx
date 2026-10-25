@@ -91,7 +91,11 @@ export default async function PostPage({
   const showDonate =
     !needPaywall &&
     payment.donate.enabled &&
-    (payment.epay.enabled || payment.wechat.enabled || payment.alipay.enabled);
+    (payment.epay.enabled ||
+      payment.wechat.enabled ||
+      payment.alipay.enabled ||
+      payment.donate.wechatQr ||
+      payment.donate.alipayQr);
 
   return (
     <article>
@@ -211,8 +215,11 @@ export default async function PostPage({
       {showDonate && (
         <DonateButton
           title={payment.donate.title}
+          desc={payment.donate.desc}
           amounts={payment.donate.amounts}
           customAmount={payment.donate.customAmount}
+          wechatQr={payment.donate.wechatQr}
+          alipayQr={payment.donate.alipayQr}
           channels={{
             epay: payment.epay.enabled,
             wechat: payment.wechat.enabled,

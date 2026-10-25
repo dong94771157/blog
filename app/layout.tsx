@@ -14,6 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${site.siteName}`,
     },
     description: site.description,
+    ...(site.keywords ? { keywords: site.keywords } : {}),
+    ...(site.author ? { authors: [{ name: site.author }] } : {}),
     ...(site.faviconUrl ? { icons: { icon: site.faviconUrl } } : {}),
   };
 }
@@ -80,8 +82,14 @@ export default async function RootLayout({
               </div>
             )}
             <div>
-              <span className="text-pink-300">✿</span> Powered by Next.js & EdgeOne Makers{" "}
-              <span className="text-pink-300">✿</span>
+              {site.footerText ? (
+                <span>{site.footerText}</span>
+              ) : (
+                <>
+                  <span className="text-pink-300">✿</span> Powered by Next.js & EdgeOne Makers{" "}
+                  <span className="text-pink-300">✿</span>
+                </>
+              )}
               {site.icp && (
                 <>
                   {" · "}

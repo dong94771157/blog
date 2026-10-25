@@ -255,7 +255,7 @@ export async function createAlipayOrder(
   options?: OrderOptions
 ): Promise<{ qrCode: string; outTradeNo: string }> {
   const settings = await getPaymentSettings();
-  const { appId, privateKey } = settings.alipay;
+  const { appId, privateKey, gateway } = settings.alipay;
   if (!appId || !privateKey) throw new Error("支付宝配置不完整");
 
   const orderType = options?.type || "donate";
@@ -283,7 +283,7 @@ export async function createAlipayOrder(
   const signStr = sorted.map((k) => `${k}=${params[k]}`).join("&");
   params.sign = await rsaSign(signStr, privateKey);
 
-  const res = await fetch("https://openapi.alipay.com/gateway.do", {
+  const res = await fetch(gateway || "https://openapi.alipay.com/gateway.do", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(params).toString(),

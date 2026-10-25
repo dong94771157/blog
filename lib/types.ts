@@ -103,6 +103,14 @@ export interface SiteSettings {
   faviconUrl: string;
   description: string;
   icp: string;
+  // SEO 与作者
+  author: string; // 站长/作者名
+  keywords: string; // SEO 关键词（逗号分隔）
+  // 功能开关
+  commentEnabled: boolean; // 留言功能开关
+  registrationEnabled: boolean; // 读者注册开关
+  // 页脚
+  footerText: string; // 自定义页脚文案（留空显示默认）
   contact: {
     email: string;
     github: string;
@@ -120,6 +128,11 @@ export const defaultSiteSettings: SiteSettings = {
   faviconUrl: "",
   description: "记录技术与生活",
   icp: "",
+  author: "",
+  keywords: "",
+  commentEnabled: true,
+  registrationEnabled: true,
+  footerText: "",
   contact: {
     email: "",
     github: "",
@@ -176,6 +189,12 @@ export const defaultNotifySettings: NotifySettings = {
 
 // ===== 支付配置 =====
 export interface PaymentSettings {
+  // 通用设置
+  general: {
+    rechargeEnabled: boolean; // 余额充值功能开关
+    minRecharge: number; // 最低充值金额
+    maxRecharge: number; // 最高充值金额
+  };
   epay: {
     enabled: boolean;
     apiUrl: string;
@@ -195,16 +214,25 @@ export interface PaymentSettings {
     appId: string;
     privateKey: string;
     alipayPublicKey: string;
+    gateway: string; // 网关地址（正式/沙箱）
   };
   donate: {
     enabled: boolean;
     title: string;
+    desc: string; // 赞赏说明文案
     amounts: number[];
     customAmount: boolean;
+    wechatQr: string; // 微信收款码图片 URL（免签约扫码）
+    alipayQr: string; // 支付宝收款码图片 URL（免签约扫码）
   };
 }
 
 export const defaultPaymentSettings: PaymentSettings = {
+  general: {
+    rechargeEnabled: true,
+    minRecharge: 1,
+    maxRecharge: 1000,
+  },
   epay: { enabled: false, apiUrl: "", pid: "", key: "" },
   wechat: {
     enabled: false,
@@ -219,12 +247,16 @@ export const defaultPaymentSettings: PaymentSettings = {
     appId: "",
     privateKey: "",
     alipayPublicKey: "",
+    gateway: "https://openapi.alipay.com/gateway.do",
   },
   donate: {
     enabled: false,
     title: "赞赏支持",
+    desc: "如果文章对你有帮助，可以请我喝杯咖啡~",
     amounts: [5, 10, 20, 50, 100],
     customAmount: true,
+    wechatQr: "",
+    alipayQr: "",
   },
 };
 

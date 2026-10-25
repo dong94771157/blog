@@ -44,6 +44,12 @@ export async function GET(request: NextRequest) {
 // 发表留言（AI 自动审核）
 export async function POST(request: NextRequest) {
   try {
+    // 留言功能开关检查
+    const siteSettings = await getSiteSettings();
+    if (!siteSettings.commentEnabled) {
+      return NextResponse.json({ error: "留言功能暂未开放" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { postId, authorName, content } = body;
 

@@ -4,8 +4,11 @@ import { useState } from "react";
 
 interface DonateButtonProps {
   title: string;
+  desc?: string;
   amounts: number[];
   customAmount: boolean;
+  wechatQr?: string;
+  alipayQr?: string;
   channels: {
     epay: boolean;
     wechat: boolean;
@@ -15,8 +18,11 @@ interface DonateButtonProps {
 
 export default function DonateButton({
   title,
+  desc,
   amounts,
   customAmount,
+  wechatQr,
+  alipayQr,
   channels,
 }: DonateButtonProps) {
   const [open, setOpen] = useState(false);
@@ -30,6 +36,9 @@ export default function DonateButton({
   const [loading, setLoading] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [error, setError] = useState("");
+  const [qrTab, setQrTab] = useState<"wechat" | "alipay">(
+    wechatQr ? "wechat" : "alipay"
+  );
 
   const enabledChannels = [
     channels.epay && { key: "epay", label: "支付宝/微信" },
@@ -37,7 +46,8 @@ export default function DonateButton({
     channels.alipay && { key: "alipay", label: "支付宝扫码" },
   ].filter(Boolean) as { key: string; label: string }[];
 
-  if (enabledChannels.length === 0) return null;
+  const hasQrCode = !!(wechatQr || alipayQr);
+  if (enabledChannels.length === 0 && !hasQrCode) return null;
 
   const finalAmount = useCustom ? Number(customValue) : amount;
 
@@ -114,13 +124,49 @@ export default function DonateButton({
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-gray-900">{title}</h3>
                   <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">
                     ×
                   </button>
                 </div>
 
+                {desc && (
+                  <p className="text-sm text-gray-500 mb-4 leading-relaxed">{desc}</p>
+                )}
+
+                {enabledChannels.length === 0 && hasQrCode ? (
+                  /* 仅收款码模式 */
+                  <div className="text-center py-2">
+                    <p className="text-sm text-gray-500 mb-4">扫描下方二维码赞赏支持</p>
+                    {wechatQr && alipayQr ? (
+                      <div className="flex gap-2 mb-4 justify-center">
+                        <button
+                          onClick={() => setQrTab("wechat")}
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${qrTab === "wechat" ? "bg-green-500 text-white" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          微信
+                        </button>
+                        <button
+                          onClick={() => setQrTab("alipay")}
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${qrTab === "alipay" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          支付宝
+                        </button>
+                      </div>
+                    ) : null}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrTab === "wechat" ? wechatQr : alipayQr}
+                      alt="收款码"
+                      className="mx-auto rounded-lg max-w-[220px]"
+                    />
+                    <p className="text-xs text-gray-400 mt-3">
+                      {qrTab === "wechat" ? "请用微信扫码" : "请用支付宝扫码"}
+                    </p>
+                  </div>
+                ) : (
+                  <>
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {amounts.map((a) => (
                     <button
@@ -205,6 +251,36 @@ export default function DonateButton({
                 >
                   {loading ? "创建订单中..." : `赞赏 ¥${(finalAmount || 0).toFixed(2)}`}
                 </button>
+
+                {hasQrCode && (
+                  <div className="mt-5 pt-4 border-t border-gray-100 text-center">
+                    <p className="text-xs text-gray-400 mb-3">或直接扫码赞赏</p>
+                    {wechatQr && alipayQr ? (
+                      <div className="flex gap-2 mb-3 justify-center">
+                        <button
+                          onClick={() => setQrTab("wechat")}
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${qrTab === "wechat" ? "bg-green-500 text-white" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          微信
+                        </button>
+                        <button
+                          onClick={() => setQrTab("alipay")}
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${qrTab === "alipay" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}
+                        >
+                          支付宝
+                        </button>
+                      </div>
+                    ) : null}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrTab === "wechat" ? wechatQr : alipayQr}
+                      alt="收款码"
+                      className="mx-auto rounded-lg max-w-[180px]"
+                    />
+                  </div>
+                )}
+                  </>
+                )}
               </>
             )}
           </div>

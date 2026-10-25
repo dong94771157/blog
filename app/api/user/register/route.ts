@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, signUserToken, USER_COOKIE_NAME } from "@/lib/auth";
 import { getUserByUsername, getUserByEmail, createUser } from "@/lib/store";
+import { getSiteSettings } from "@/lib/settings";
 
 // 用户注册
 export async function POST(request: NextRequest) {
   try {
+    // 注册开关检查
+    const site = await getSiteSettings();
+    if (!site.registrationEnabled) {
+      return NextResponse.json({ error: "注册功能暂未开放" }, { status: 403 });
+    }
+
     const { username, email, password } = await request.json();
 
     if (!username || !email || !password) {

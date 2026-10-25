@@ -11,8 +11,10 @@ const NAV_ITEMS = [
   { href: "/admin/categories", label: "分类管理", icon: "🏷️" },
   { href: "/admin/users", label: "用户管理", icon: "👥" },
   { href: "/admin/orders", label: "订单管理", icon: "💰" },
+  { href: "/admin/payment", label: "支付配置", icon: "💳" },
   { href: "/admin/comments", label: "留言管理", icon: "💬" },
-  { href: "/admin/settings", label: "网站设置", icon: "⚙️" },
+  { href: "/admin/notify", label: "通知管理", icon: "🔔" },
+  { href: "/admin/settings", label: "系统设置", icon: "⚙️" },
 ];
 
 export default function AdminLayout({

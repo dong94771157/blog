@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/auth";
+import { getPaymentSettings } from "@/lib/settings";
 import {
   createEpayOrder,
   createWechatOrder,
@@ -18,6 +19,19 @@ export async function POST(request: NextRequest) {
 
     if (!channel || !amount || amount <= 0) {
       return NextResponse.json({ error: "请选择支付方式并输入有效金额" }, { status: 400 });
+    }
+
+    // 充值功能开关与金额范围校验
+    const payment = await getPaymentSettings();
+    if (!payment.general.rechargeEnabled) {
+      return NextResponse.json({ error: "充值功能暂未开放" }, { status: 403 });
+    }
+    const { minRecharge, maxRecharge } = payment.general;
+    if (amount < minRecharge || amount > maxRecharge) {
+      return NextResponse.json(
+        { error: `充值金额需在 ¥${minRecharge} - ¥${maxRecharge} 之间` },
+        { status: 400 }
+      );
     }
 
     const origin = request.nextUrl.origin;
