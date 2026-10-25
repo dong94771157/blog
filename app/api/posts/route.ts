@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
 import { getAllPosts, createPost } from "@/lib/store";
+import { getSiteSettings } from "@/lib/settings";
+import { notifyNewPost } from "@/lib/notify";
 
 // 获取文章列表（后台管理用，包含未发布）
 export async function GET(request: NextRequest) {
@@ -38,6 +40,12 @@ export async function POST(request: NextRequest) {
       tags: Array.isArray(tags) ? tags : String(tags || "").split(",").map((t: string) => t.trim()).filter(Boolean),
       published: Boolean(published),
     });
+
+    // 发布文章时发送通知（异步，不阻塞响应）
+    if (post.published) {
+      const site = await getSiteSettings();
+      notifyNewPost(post.title, post.slug, site.siteName, request.nextUrl.origin).catch(() => {});
+    }
 
     return NextResponse.json({ post }, { status: 201 });
   } catch {

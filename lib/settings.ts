@@ -1,0 +1,136 @@
+import { getKV } from "./store";
+import {
+  SiteSettings,
+  NotifySettings,
+  PaymentSettings,
+  Order,
+  defaultSiteSettings,
+  defaultNotifySettings,
+  defaultPaymentSettings,
+} from "./types";
+
+// KV 键名
+const KEY_SITE = "settings:site";
+const KEY_NOTIFY = "settings:notify";
+const KEY_PAYMENT = "settings:payment";
+const ORDER_PREFIX = "order:";
+
+// 深度合并（保留默认值中用户未覆盖的字段）
+function deepMerge<T>(defaults: T, overrides: Partial<T>): T {
+  const result = { ...defaults } as Record<string, unknown>;
+  const src = overrides as Record<string, unknown>;
+  for (const key of Object.keys(src)) {
+    if (
+      src[key] &&
+      typeof src[key] === "object" &&
+      !Array.isArray(src[key]) &&
+      typeof result[key] === "object" &&
+      !Array.isArray(result[key])
+    ) {
+      result[key] = deepMerge(result[key], src[key]);
+    } else if (src[key] !== undefined) {
+      result[key] = src[key];
+    }
+  }
+  return result as T;
+}
+
+// ---- 网站设置 ----
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_SITE);
+  if (!raw) return { ...defaultSiteSettings };
+  try {
+    return deepMerge(defaultSiteSettings, JSON.parse(raw));
+  } catch {
+    return { ...defaultSiteSettings };
+  }
+}
+
+export async function saveSiteSettings(settings: Partial<SiteSettings>): Promise<SiteSettings> {
+  const kv = getKV();
+  const merged = deepMerge(await getSiteSettings(), settings);
+  await kv.put(KEY_SITE, JSON.stringify(merged));
+  return merged;
+}
+
+// ---- 通知配置 ----
+export async function getNotifySettings(): Promise<NotifySettings> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_NOTIFY);
+  if (!raw) return { ...defaultNotifySettings };
+  try {
+    return deepMerge(defaultNotifySettings, JSON.parse(raw));
+  } catch {
+    return { ...defaultNotifySettings };
+  }
+}
+
+export async function saveNotifySettings(settings: Partial<NotifySettings>): Promise<NotifySettings> {
+  const kv = getKV();
+  const merged = deepMerge(await getNotifySettings(), settings);
+  await kv.put(KEY_NOTIFY, JSON.stringify(merged));
+  return merged;
+}
+
+// ---- 支付配置 ----
+export async function getPaymentSettings(): Promise<PaymentSettings> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_PAYMENT);
+  if (!raw) return { ...defaultPaymentSettings };
+  try {
+    return deepMerge(defaultPaymentSettings, JSON.parse(raw));
+  } catch {
+    return { ...defaultPaymentSettings };
+  }
+}
+
+export async function savePaymentSettings(settings: Partial<PaymentSettings>): Promise<PaymentSettings> {
+  const kv = getKV();
+  const merged = deepMerge(await getPaymentSettings(), settings);
+  await kv.put(KEY_PAYMENT, JSON.stringify(merged));
+  return merged;
+}
+
+// ---- 订单 ----
+export async function createOrder(order: Order): Promise<void> {
+  const kv = getKV();
+  await kv.put(`${ORDER_PREFIX}${order.outTradeNo}`, JSON.stringify(order));
+}
+
+export async function getOrder(outTradeNo: string): Promise<Order | null> {
+  const kv = getKV();
+  const raw = await kv.get(`${ORDER_PREFIX}${outTradeNo}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Order;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateOrder(outTradeNo: string, updates: Partial<Order>): Promise<Order | null> {
+  const existing = await getOrder(outTradeNo);
+  if (!existing) return null;
+  const kv = getKV();
+  const updated = { ...existing, ...updates };
+  await kv.put(`${ORDER_PREFIX}${outTradeNo}`, JSON.stringify(updated));
+  return updated;
+}
+
+export async function getAllOrders(): Promise<Order[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: ORDER_PREFIX, limit: 256 });
+  const orders: Order[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        orders.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return orders.sort((a, b) => b.createdAt - a.createdAt);
+}

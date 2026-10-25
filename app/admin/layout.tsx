@@ -61,6 +61,12 @@ export default function AdminLayout({
           >
             新建文章
           </Link>
+          <Link
+            href="/admin/settings"
+            className="text-sm text-gray-500 hover:text-blue-600"
+          >
+            网站设置
+          </Link>
         </div>
         <button
           onClick={handleLogout}

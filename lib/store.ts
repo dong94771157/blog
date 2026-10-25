@@ -53,8 +53,8 @@ class MemoryStore implements KVNamespace {
   }
 }
 
-// 获取 KV 实例
-function getKV(): KVNamespace {
+// 获取 KV 实例（导出供其他模块使用）
+export function getKV(): KVNamespace {
   const g = globalThis as Record<string, unknown>;
   // EdgeOne 环境中绑定的 KV 变量名
   if (g.BLOG_KV) return g.BLOG_KV as KVNamespace;

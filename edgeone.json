@@ -2,6 +2,11 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "nodeVersion": "22.11.0",
+  "cloudFunctions": {
+    "nodejs": {
+      "externalNodeModules": ["nodemailer", "qrcode"]
+    }
+  },
   "headers": [
     {
       "source": "/*",

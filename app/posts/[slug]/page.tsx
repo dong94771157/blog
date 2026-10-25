@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPostBySlug } from "@/lib/store";
+import { getPaymentSettings } from "@/lib/settings";
 import { marked } from "marked";
+import DonateButton from "@/components/DonateButton";
 
 export const revalidate = 60;
 
@@ -35,6 +37,11 @@ export default async function PostPage({
   }
 
   const html = await marked.parse(post.content);
+
+  const payment = await getPaymentSettings();
+  const showDonate =
+    payment.donate.enabled &&
+    (payment.epay.enabled || payment.wechat.enabled || payment.alipay.enabled);
 
   return (
     <article>
@@ -74,6 +81,19 @@ export default async function PostPage({
         className="prose-blog"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+
+      {showDonate && (
+        <DonateButton
+          title={payment.donate.title}
+          amounts={payment.donate.amounts}
+          customAmount={payment.donate.customAmount}
+          channels={{
+            epay: payment.epay.enabled,
+            wechat: payment.wechat.enabled,
+            alipay: payment.alipay.enabled,
+          }}
+        />
+      )}
     </article>
   );
 }

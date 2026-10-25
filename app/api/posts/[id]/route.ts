@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
 import { getPostById, updatePost, deletePost } from "@/lib/store";
+import { getSiteSettings } from "@/lib/settings";
+import { notifyNewPost } from "@/lib/notify";
 
 // 获取单篇文章
 export async function GET(
@@ -33,6 +35,7 @@ export async function PUT(
     const body = await request.json();
     const { title, slug, content, excerpt, tags, published } = body;
 
+    const before = await getPostById(id);
     const post = await updatePost(id, {
       ...(title !== undefined && { title }),
       ...(slug !== undefined && { slug }),
@@ -49,6 +52,13 @@ export async function PUT(
     if (!post) {
       return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
+
+    // 草稿转为发布时发送通知
+    if (post.published && before && !before.published) {
+      const site = await getSiteSettings();
+      notifyNewPost(post.title, post.slug, site.siteName, request.nextUrl.origin).catch(() => {});
+    }
+
     return NextResponse.json({ post });
   } catch {
     return NextResponse.json({ error: "请求格式错误" }, { status: 400 });
