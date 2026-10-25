@@ -356,3 +356,23 @@ export interface ProductPromo {
   enabled: boolean; // 是否展示
   createdAt: number;
 }
+
+// ===== 后台自定义设置 =====
+export interface AdminSettings {
+  title: string; // 后台名称（显示在侧边栏品牌区与登录页）
+  logo: string; // 后台 Logo URL（留空显示默认 ✿ 图标）
+  welcomeText: string; // 登录页欢迎语（留空显示默认）
+}
+
+export const defaultAdminSettings: AdminSettings = {
+  title: "后台管理",
+  logo: "",
+  welcomeText: "",
+};
+
+// ===== 管理员凭据（修改密码后存 KV，优先于环境变量） =====
+export interface AdminCredentials {
+  username: string; // 管理员用户名
+  passwordHash: string; // 密码哈希（salt:hash 格式）
+  updatedAt: number; // 最后修改时间
+}

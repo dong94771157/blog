@@ -9,6 +9,9 @@ import {
   savePaymentSettings,
   getAISettings,
   saveAISettings,
+  getAdminSettings,
+  saveAdminSettings,
+  getAdminCredentials,
 } from "@/lib/settings";
 
 // 获取设置（type 参数区分：site / notify / payment）
@@ -27,6 +30,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ settings: await getPaymentSettings() });
     case "ai":
       return NextResponse.json({ settings: await getAISettings() });
+    case "admin": {
+      const [settings, cred] = await Promise.all([
+        getAdminSettings(),
+        getAdminCredentials(),
+      ]);
+      return NextResponse.json({
+        settings,
+        adminUsername: cred
+          ? cred.username
+          : process.env.ADMIN_USERNAME || "admin",
+        hasCustomCred: cred !== null,
+        credUpdatedAt: cred?.updatedAt || 0,
+      });
+    }
     default:
       return NextResponse.json({ error: "未知设置类型" }, { status: 400 });
   }
@@ -51,6 +68,8 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ settings: await savePaymentSettings(settings) });
       case "ai":
         return NextResponse.json({ settings: await saveAISettings(settings) });
+      case "admin":
+        return NextResponse.json({ settings: await saveAdminSettings(settings) });
       default:
         return NextResponse.json({ error: "未知设置类型" }, { status: 400 });
     }

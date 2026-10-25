@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
@@ -10,6 +10,25 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [adminInfo, setAdminInfo] = useState<{
+    title: string;
+    logo: string;
+    welcomeText: string;
+  }>({ title: "后台管理", logo: "", welcomeText: "" });
+
+  useEffect(() => {
+    fetch("/api/admin/info")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.title)
+          setAdminInfo({
+            title: d.title,
+            logo: d.logo || "",
+            welcomeText: d.welcomeText || "",
+          });
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,17 +71,22 @@ export default function AdminLoginPage() {
           </svg>
 
           <div className="relative z-[1]">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-4xl mb-6 shadow-lg">
-              ✿
+            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-4xl mb-6 shadow-lg overflow-hidden">
+              {adminInfo.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={adminInfo.logo} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                "✿"
+              )}
             </div>
             <h2 className="text-3xl font-bold text-white drop-shadow-md mb-3">
-              二次元博客
+              {adminInfo.title}
               <br />
               管理系统
             </h2>
             <p className="text-white/75 text-sm leading-relaxed max-w-xs">
-              在这里管理你的文章、分类、用户与订单，
-              用文字记录孤独与温柔 ♡
+              {adminInfo.welcomeText ||
+                "在这里管理你的文章、分类、用户与订单，用文字记录孤独与温柔 ♡"}
             </p>
           </div>
 
@@ -90,18 +114,23 @@ export default function AdminLoginPage() {
         <div className="p-8 sm:p-12 flex flex-col justify-center">
           {/* 移动端 Logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-block w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-3xl mb-3 shadow-lg shadow-pink-200">
-              ✿
+            <div className="inline-block w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-3xl mb-3 shadow-lg shadow-pink-200 overflow-hidden">
+              {adminInfo.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={adminInfo.logo} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                "✿"
+              )}
             </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
-              后台管理
+              {adminInfo.title}
             </h1>
           </div>
 
           <div className="hidden lg:block mb-8">
             <h1 className="text-2xl font-bold text-gray-800">欢迎回来 👋</h1>
             <p className="text-gray-400 text-sm mt-1.5">
-              请输入管理员账号登录后台
+              {adminInfo.welcomeText || "请输入管理员账号登录后台"}
             </p>
           </div>
 

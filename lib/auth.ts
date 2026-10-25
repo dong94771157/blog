@@ -63,11 +63,34 @@ export async function verifyToken(token: string): Promise<Record<string, unknown
   }
 }
 
-/** 验证用户名密码 */
-export function verifyCredentials(username: string, password: string): boolean {
+/** 验证用户名密码（优先使用 KV 中自定义凭据，否则降级环境变量） */
+export async function verifyCredentials(username: string, password: string): Promise<boolean> {
+  // 动态引入避免循环依赖
+  const { getAdminCredentials } = await import("./settings");
+  const cred = await getAdminCredentials();
+  if (cred) {
+    // 使用 KV 中自定义凭据
+    if (username !== cred.username) return false;
+    return verifyPassword(password, cred.passwordHash);
+  }
+  // 降级：环境变量
   const adminUser = process.env.ADMIN_USERNAME || "admin";
   const adminPass = process.env.ADMIN_PASSWORD || "admin123";
   return username === adminUser && password === adminPass;
+}
+
+/** 获取当前管理员用户名（KV 优先，否则环境变量） */
+export async function getAdminUsername(): Promise<string> {
+  const { getAdminCredentials } = await import("./settings");
+  const cred = await getAdminCredentials();
+  if (cred) return cred.username;
+  return process.env.ADMIN_USERNAME || "admin";
+}
+
+/** 检查管理员是否已设置自定义凭据（用于前端提示） */
+export async function hasCustomCredentials(): Promise<boolean> {
+  const { getAdminCredentials } = await import("./settings");
+  return (await getAdminCredentials()) !== null;
 }
 
 /** 从请求中提取并验证 token */

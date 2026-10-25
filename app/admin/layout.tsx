@@ -57,7 +57,21 @@ export default function AdminLayout({
   const router = useRouter();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminInfo, setAdminInfo] = useState<{ title: string; logo: string }>({
+    title: "后台管理",
+    logo: "",
+  });
   const isLoginPage = pathname === "/admin/login";
+
+  useEffect(() => {
+    // 加载后台外观设置（公开接口）
+    fetch("/api/admin/info")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.title) setAdminInfo({ title: d.title, logo: d.logo || "" });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isLoginPage) {
@@ -114,12 +128,17 @@ export default function AdminLayout({
         <div className="p-4 flex flex-col h-full overflow-y-auto">
           {/* 品牌区 */}
           <div className="flex items-center gap-3 px-2 py-3 mb-4 rounded-2xl bg-white/10 backdrop-blur-sm">
-            <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center text-xl shadow-inner">
-              ✿
+            <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center text-xl shadow-inner overflow-hidden flex-shrink-0">
+              {adminInfo.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={adminInfo.logo} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                "✿"
+              )}
             </div>
-            <div>
-              <div className="text-white font-bold text-base leading-tight">
-                后台管理
+            <div className="min-w-0">
+              <div className="text-white font-bold text-base leading-tight truncate">
+                {adminInfo.title}
               </div>
               <div className="text-white/60 text-[11px]">二次元博客系统</div>
             </div>

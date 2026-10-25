@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SiteSettings, AISettings } from "@/lib/types";
+import type { SiteSettings, AISettings, AdminSettings } from "@/lib/types";
 
-type Tab = "site" | "ai";
+type Tab = "site" | "ai" | "admin";
 
 const inputCls =
   "w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400";
@@ -15,17 +15,26 @@ export default function SettingsPage() {
   const [tab, setTab] = useState<Tab>("site");
   const [site, setSite] = useState<SiteSettings | null>(null);
   const [ai, setAi] = useState<AISettings | null>(null);
+  const [admin, setAdmin] = useState<AdminSettings | null>(null);
+  const [adminUsername, setAdminUsername] = useState("admin");
+  const [hasCustomCred, setHasCustomCred] = useState(false);
+  const [credUpdatedAt, setCredUpdatedAt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     (async () => {
-      const [s, a] = await Promise.all([
+      const [s, a, ad] = await Promise.all([
         fetch("/api/settings?type=site").then((r) => r.json()),
         fetch("/api/settings?type=ai").then((r) => r.json()),
+        fetch("/api/settings?type=admin").then((r) => r.json()),
       ]);
       setSite(s.settings);
       setAi(a.settings);
+      setAdmin(ad.settings);
+      setAdminUsername(ad.adminUsername || "admin");
+      setHasCustomCred(!!ad.hasCustomCred);
+      setCredUpdatedAt(ad.credUpdatedAt || 0);
     })();
   }, []);
 
@@ -46,6 +55,7 @@ export default function SettingsPage() {
         const d = await res.json();
         if (type === "site") setSite(d.settings);
         if (type === "ai") setAi(d.settings);
+        if (type === "admin") setAdmin(d.settings);
         flash("保存成功");
       } else {
         flash("保存失败");
@@ -57,7 +67,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (!site || !ai) {
+  if (!site || !ai || !admin) {
     return <div className="text-center py-20 text-pink-300 text-lg">加载中...</div>;
   }
 
@@ -65,7 +75,7 @@ export default function SettingsPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-pink-600">系统设置</h1>
-        <p className="text-sm text-pink-400 mt-1">网站信息、功能开关与 AI 配置</p>
+        <p className="text-sm text-pink-400 mt-1">网站信息、功能开关、AI 配置与后台管理</p>
       </div>
 
       <div className="flex gap-2 mb-6">
@@ -73,6 +83,7 @@ export default function SettingsPage() {
           [
             ["site", "网站信息"],
             ["ai", "AI 配置"],
+            ["admin", "后台管理"],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -97,6 +108,22 @@ export default function SettingsPage() {
 
       {tab === "site" && <SiteForm site={site} setSite={setSite} save={save} saving={saving} />}
       {tab === "ai" && <AIForm ai={ai} setAi={setAi} save={save} saving={saving} />}
+      {tab === "admin" && (
+        <AdminForm
+          admin={admin}
+          setAdmin={setAdmin}
+          save={save}
+          saving={saving}
+          adminUsername={adminUsername}
+          hasCustomCred={hasCustomCred}
+          credUpdatedAt={credUpdatedAt}
+          onPasswordChanged={(u) => {
+            setAdminUsername(u);
+            setHasCustomCred(true);
+            setCredUpdatedAt(Date.now());
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -486,6 +513,267 @@ function AIForm({
       <button onClick={() => save("ai", ai)} disabled={saving} className={btnCls}>
         {saving ? "保存中..." : "保存 AI 配置"}
       </button>
+    </div>
+  );
+}
+
+// ---- 后台管理表单 ----
+function AdminForm({
+  admin,
+  setAdmin,
+  save,
+  saving,
+  adminUsername,
+  hasCustomCred,
+  credUpdatedAt,
+  onPasswordChanged,
+}: {
+  admin: AdminSettings;
+  setAdmin: (a: AdminSettings) => void;
+  save: (type: Tab, data: unknown) => void;
+  saving: boolean;
+  adminUsername: string;
+  hasCustomCred: boolean;
+  credUpdatedAt: number;
+  onPasswordChanged: (username: string) => void;
+}) {
+  // 后台外观
+  function update<K extends keyof AdminSettings>(key: K, value: AdminSettings[K]) {
+    setAdmin({ ...admin, [key]: value });
+  }
+
+  // 修改密码状态
+  const [oldPassword, setOldPassword] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [changing, setChanging] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState("");
+  const [pwdError, setPwdError] = useState("");
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwdError("");
+    setPwdMsg("");
+
+    if (!oldPassword || !newPassword) {
+      setPwdError("请填写当前密码和新密码");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPwdError("新密码至少 6 位");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwdError("两次输入的新密码不一致");
+      return;
+    }
+
+    setChanging(true);
+    try {
+      const res = await fetch("/api/admin/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPassword, newUsername, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwdMsg(data.message || "密码修改成功");
+        onPasswordChanged(data.username || newUsername || adminUsername);
+        setOldPassword("");
+        setNewUsername("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setPwdError(data.error || "修改失败");
+      }
+    } catch {
+      setPwdError("网络错误");
+    } finally {
+      setChanging(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* 后台外观设置 */}
+      <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-xl">🎨</span>
+          <h3 className="font-medium text-gray-800">后台外观</h3>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          自定义后台侧边栏与登录页显示的名称、Logo 和欢迎语
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>后台名称</label>
+            <input
+              className={inputCls}
+              value={admin.title}
+              onChange={(e) => update("title", e.target.value)}
+              placeholder="如：我的小窝后台"
+            />
+            <p className="text-xs text-gray-400 mt-1">显示在侧边栏品牌区与登录页标题</p>
+          </div>
+          <div>
+            <label className={labelCls}>后台 Logo URL</label>
+            <input
+              className={inputCls}
+              value={admin.logo}
+              onChange={(e) => update("logo", e.target.value)}
+              placeholder="https://... 留空显示默认 ✿ 图标"
+            />
+            <p className="text-xs text-gray-400 mt-1">建议正方形图片，显示为圆角图标</p>
+          </div>
+          <div className="md:col-span-2">
+            <label className={labelCls}>登录页欢迎语</label>
+            <input
+              className={inputCls}
+              value={admin.welcomeText}
+              onChange={(e) => update("welcomeText", e.target.value)}
+              placeholder="留空显示默认欢迎语"
+            />
+          </div>
+        </div>
+        {/* Logo 预览 */}
+        {admin.logo && (
+          <div className="mt-4 flex items-center gap-3 bg-pink-50/60 rounded-xl p-3 border border-pink-100">
+            <span className="text-xs text-gray-400">预览：</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={admin.logo}
+              alt="logo 预览"
+              className="w-10 h-10 rounded-xl object-cover border border-pink-100"
+              onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+            />
+            <span className="text-sm font-medium text-pink-600">{admin.title || "后台管理"}</span>
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => save("admin", admin)} disabled={saving} className={btnCls}>
+        {saving ? "保存中..." : "保存后台外观"}
+      </button>
+
+      {/* 修改管理密码 */}
+      <div className="bg-white/80 backdrop-blur-sm border border-amber-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-xl">🔐</span>
+          <h3 className="font-medium text-gray-800">修改管理密码</h3>
+        </div>
+
+        {/* 当前状态 */}
+        <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-100 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+          <span className="text-gray-500">
+            当前用户名：
+            <span className="font-semibold text-amber-700 ml-1">{adminUsername}</span>
+          </span>
+          <span className="text-gray-500">
+            密码来源：
+            <span className={`font-semibold ml-1 ${hasCustomCred ? "text-green-600" : "text-amber-600"}`}>
+              {hasCustomCred ? "自定义密码（已修改）" : "环境变量默认密码"}
+            </span>
+          </span>
+          {hasCustomCred && credUpdatedAt > 0 && (
+            <span className="text-gray-400">
+              最后修改：{new Date(credUpdatedAt).toLocaleString("zh-CN")}
+            </span>
+          )}
+        </div>
+
+        {!hasCustomCred && (
+          <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100 mb-4">
+            💡 当前使用环境变量（ADMIN_USERNAME / ADMIN_PASSWORD）中的默认密码，建议在此修改为自定义密码以增强安全性。修改后将以 KV 存储的凭据为准。
+          </p>
+        )}
+
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          {pwdError && (
+            <div className="bg-red-50 text-red-500 text-sm px-3 py-2 rounded-lg border border-red-100">
+              ⚠️ {pwdError}
+            </div>
+          )}
+          {pwdMsg && (
+            <div className="bg-green-50 text-green-600 text-sm px-3 py-2 rounded-lg border border-green-100">
+              ✓ {pwdMsg}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>当前密码 *</label>
+              <div className="relative">
+                <input
+                  type={showOld ? "text" : "password"}
+                  className={inputCls + " pr-10"}
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="输入当前密码"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOld(!showOld)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 text-sm"
+                >
+                  {showOld ? "🙈" : "👁"}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>新用户名（可选）</label>
+              <input
+                className={inputCls}
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder={`留空保持「${adminUsername}」不变`}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>新密码 *</label>
+              <div className="relative">
+                <input
+                  type={showNew ? "text" : "password"}
+                  className={inputCls + " pr-10"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="至少 6 位"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew(!showNew)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 text-sm"
+                >
+                  {showNew ? "🙈" : "👁"}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>确认新密码 *</label>
+              <input
+                type={showNew ? "text" : "password"}
+                className={inputCls}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="再次输入新密码"
+                required
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={changing}
+            className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-5 py-2 rounded-lg text-sm font-medium hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 transition-all shadow-md shadow-amber-100"
+          >
+            {changing ? "修改中..." : "确认修改"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

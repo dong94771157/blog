@@ -8,10 +8,13 @@ import {
   Comment,
   FriendLink,
   ProductPromo,
+  AdminSettings,
+  AdminCredentials,
   defaultSiteSettings,
   defaultNotifySettings,
   defaultPaymentSettings,
   defaultAISettings,
+  defaultAdminSettings,
 } from "./types";
 
 // KV 键名
@@ -19,6 +22,8 @@ const KEY_SITE = "settings:site";
 const KEY_NOTIFY = "settings:notify";
 const KEY_PAYMENT = "settings:payment";
 const KEY_AI = "settings:ai";
+const KEY_ADMIN = "settings:admin";
+const KEY_ADMIN_CRED = "admin:credentials";
 const ORDER_PREFIX = "order:";
 const COMMENT_PREFIX = "comment:";
 const FRIEND_PREFIX = "friend:";
@@ -161,6 +166,45 @@ export async function saveAISettings(settings: Partial<AISettings>): Promise<AIS
   const merged = deepMerge(await getAISettings(), settings);
   await kv.put(KEY_AI, JSON.stringify(merged));
   return merged;
+}
+
+// ---- 后台自定义设置 ----
+export async function getAdminSettings(): Promise<AdminSettings> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_ADMIN);
+  if (!raw) return { ...defaultAdminSettings };
+  try {
+    return deepMerge(defaultAdminSettings, JSON.parse(raw));
+  } catch {
+    return { ...defaultAdminSettings };
+  }
+}
+
+export async function saveAdminSettings(settings: Partial<AdminSettings>): Promise<AdminSettings> {
+  const kv = getKV();
+  const merged = deepMerge(await getAdminSettings(), settings);
+  await kv.put(KEY_ADMIN, JSON.stringify(merged));
+  return merged;
+}
+
+// ---- 管理员凭据（修改密码后存 KV，优先于环境变量） ----
+export async function getAdminCredentials(): Promise<AdminCredentials | null> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_ADMIN_CRED);
+  if (!raw) return null;
+  try {
+    const cred = JSON.parse(raw) as AdminCredentials;
+    // 必须有密码哈希才视为有效
+    if (!cred.username || !cred.passwordHash) return null;
+    return cred;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveAdminCredentials(cred: AdminCredentials): Promise<void> {
+  const kv = getKV();
+  await kv.put(KEY_ADMIN_CRED, JSON.stringify(cred));
 }
 
 // ---- 留言 ----
