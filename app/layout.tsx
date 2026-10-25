@@ -38,7 +38,7 @@ export default async function RootLayout({
     <html lang="zh-CN">
       <body>
         <header className="sticky top-0 z-40 border-b border-pink-100 bg-white/80 backdrop-blur-md">
-          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+          <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 text-xl font-bold hover:opacity-80 transition-opacity">
               {site.logoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -62,11 +62,11 @@ export default async function RootLayout({
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-8 min-h-[calc(100vh-140px)]">
+        <main className="mx-auto max-w-7xl px-4 py-8 min-h-[calc(100vh-140px)]">
           {children}
         </main>
         <footer className="border-t border-pink-100 bg-white/60 backdrop-blur">
-          <div className="mx-auto max-w-6xl px-4 py-6 text-center text-sm text-gray-400 space-y-2">
+          <div className="mx-auto max-w-7xl px-4 py-6 text-center text-sm text-gray-400 space-y-2">
             {hasContact && (
               <div className="flex justify-center gap-4 text-xs">
                 {contact.email && (

@@ -91,8 +91,8 @@ export default function OwnerCard({ site }: { site: SiteSettings }) {
 
       {/* 名称与简介 */}
       <div className="px-4 pb-3 text-center">
-        <h3 className="font-bold text-gray-800 text-base">{ownerName}</h3>
-        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+        <h3 className="font-bold text-gray-800 text-lg">{ownerName}</h3>
+        <p className="text-sm text-gray-500 mt-2 leading-relaxed">
           {site.ownerBio}
         </p>
       </div>
@@ -100,7 +100,7 @@ export default function OwnerCard({ site }: { site: SiteSettings }) {
       {/* 社交媒体 */}
       {socials.length > 0 && (
         <div className="px-4 pb-3">
-          <div className="flex flex-wrap justify-center gap-1.5">
+          <div className="flex flex-wrap justify-center gap-2">
             {socials.map((s) =>
               s.href ? (
                 <a
@@ -109,7 +109,7 @@ export default function OwnerCard({ site }: { site: SiteSettings }) {
                   target={s.href.startsWith("mailto:") ? undefined : "_blank"}
                   rel="noopener noreferrer"
                   title={s.label}
-                  className={`w-8 h-8 rounded-full border border-pink-100 bg-white/60 flex items-center justify-center text-sm transition-all hover:scale-110 ${s.color}`}
+                  className={`w-9 h-9 rounded-full border border-pink-100 bg-white/60 flex items-center justify-center text-base transition-all hover:scale-110 ${s.color}`}
                 >
                   {s.icon}
                 </a>
@@ -117,7 +117,7 @@ export default function OwnerCard({ site }: { site: SiteSettings }) {
                 <span
                   key={s.key}
                   title={`${s.label}: ${s.text}`}
-                  className={`group relative w-8 h-8 rounded-full border border-pink-100 bg-white/60 flex items-center justify-center text-sm cursor-default transition-all hover:scale-110 ${s.color}`}
+                  className={`group relative w-9 h-9 rounded-full border border-pink-100 bg-white/60 flex items-center justify-center text-base cursor-default transition-all hover:scale-110 ${s.color}`}
                 >
                   {s.icon}
                   <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] bg-gray-800 text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">

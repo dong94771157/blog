@@ -154,19 +154,19 @@ export default function FriendLinks({
                 <img
                   src={link.logo}
                   alt={link.name}
-                  className="w-8 h-8 rounded-lg object-cover flex-shrink-0 border border-pink-100"
+                  className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-pink-100"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center text-xs font-bold text-pink-600 flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center text-sm font-bold text-pink-600 flex-shrink-0">
                   {link.name.charAt(0)}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-gray-700 truncate group-hover:text-pink-600 transition-colors">
+                <p className="text-sm font-semibold text-gray-700 truncate group-hover:text-pink-600 transition-colors">
                   {link.name}
                 </p>
                 {link.desc && (
-                  <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                  <p className="text-xs text-gray-400 truncate mt-0.5">
                     {link.desc}
                   </p>
                 )}

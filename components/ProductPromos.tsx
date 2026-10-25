@@ -25,12 +25,12 @@ export default function ProductPromos({ products }: { products: ProductPromo[] }
                 <img
                   src={p.image}
                   alt={p.title}
-                  className="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-pink-100"
+                  className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-pink-100"
                 />
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-bold text-gray-700 truncate group-hover:text-pink-600 transition-colors">
+                  <h4 className="text-sm font-bold text-gray-700 truncate group-hover:text-pink-600 transition-colors">
                     {p.title}
                   </h4>
                   {p.badge && (
@@ -40,12 +40,12 @@ export default function ProductPromos({ products }: { products: ProductPromo[] }
                   )}
                 </div>
                 {p.desc && (
-                  <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
                     {p.desc}
                   </p>
                 )}
                 {p.price && (
-                  <p className="text-xs font-bold text-pink-500 mt-1">
+                  <p className="text-sm font-bold text-pink-500 mt-1">
                     {p.price}
                   </p>
                 )}

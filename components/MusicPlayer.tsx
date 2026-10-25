@@ -56,19 +56,22 @@ export default function MusicPlayer() {
     }
   }, []);
 
-  // 首次展开时加载
+  // 页面加载时自动加载伤感歌单（无需展开）
   useEffect(() => {
-    if (expanded && songs.length === 0) {
+    if (songs.length === 0) {
       loadSongs();
     }
-  }, [expanded, songs.length, loadSongs]);
+  }, [songs.length, loadSongs]);
 
   // 监听外部唤起事件（首页站长卡片等触发）
   useEffect(() => {
-    const handler = () => setExpanded(true);
+    const handler = () => {
+      setExpanded(true);
+      if (songs.length > 0) setPlaying(true);
+    };
     window.addEventListener("open-music-player", handler);
     return () => window.removeEventListener("open-music-player", handler);
-  }, []);
+  }, [songs.length]);
 
   // 播放/暂停
   useEffect(() => {
@@ -171,11 +174,20 @@ export default function MusicPlayer() {
   if (!expanded) {
     return (
       <button
-        onClick={() => setExpanded(true)}
-        title="在线音乐"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 text-white text-2xl shadow-xl shadow-pink-300/50 hover:shadow-pink-400/60 hover:scale-110 transition-all flex items-center justify-center"
+        onClick={() => {
+          setExpanded(true);
+          // 歌单已自动加载，点击即播放
+          if (songs.length > 0 && !playing) {
+            setPlaying(true);
+          }
+        }}
+        title="在线音乐 · 伤感歌单"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 text-white text-2xl shadow-xl shadow-pink-300/50 hover:shadow-pink-400/60 hover:scale-110 transition-all flex items-center justify-center relative"
       >
         🎵
+        {songs.length > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white animate-pulse" title="歌单已就绪" />
+        )}
       </button>
     );
   }

@@ -46,7 +46,7 @@ export default async function HomePage() {
       </div>
 
       {/* 双栏布局 */}
-      <div className="flex gap-8 items-start">
+      <div className="flex gap-10 items-start">
         {/* 左侧：文章列表 */}
         <div className="flex-1 min-w-0">
           {/* 分类导航 */}
@@ -82,7 +82,7 @@ export default async function HomePage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {posts.map((post) => {
                 const cat = post.categoryId ? categoryMap.get(post.categoryId) : null;
                 return (
@@ -165,7 +165,7 @@ export default async function HomePage() {
         </div>
 
         {/* 右侧：侧边栏 */}
-        <aside className="hidden lg:block w-80 flex-shrink-0 space-y-6 sticky top-24">
+        <aside className="hidden lg:block w-96 flex-shrink-0 space-y-6 sticky top-24">
           <OwnerCard site={site} />
           <PostToc posts={posts} />
           <FriendLinks links={friendLinks} siteName={site.siteName} />

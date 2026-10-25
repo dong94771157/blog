@@ -17,12 +17,12 @@ export default function PostToc({ posts }: { posts: Post[] }) {
           <li key={post.id}>
             <Link
               href={`/posts/${post.slug}`}
-              className="group flex items-start gap-2 px-2 py-1.5 rounded-lg hover:bg-pink-50 transition-colors"
+              className="group flex items-start gap-2 px-2 py-2 rounded-lg hover:bg-pink-50 transition-colors"
             >
               <span className="flex-shrink-0 w-5 h-5 rounded-full bg-pink-50 text-pink-400 text-[10px] font-bold flex items-center justify-center mt-0.5 group-hover:bg-pink-100 group-hover:text-pink-600 transition-colors">
                 {i + 1}
               </span>
-              <span className="text-xs text-gray-600 leading-relaxed line-clamp-2 group-hover:text-pink-600 transition-colors">
+              <span className="text-sm text-gray-600 leading-relaxed line-clamp-2 group-hover:text-pink-600 transition-colors">
                 {post.title}
               </span>
             </Link>
