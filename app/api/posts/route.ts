@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, slug, content, excerpt, tags, published } = body;
+    const { title, slug, content, excerpt, tags, published, categoryId, coverUrl, paid, price, freeContent } = body;
 
     if (!title || !content) {
       return NextResponse.json(
@@ -39,6 +39,11 @@ export async function POST(request: NextRequest) {
       excerpt,
       tags: Array.isArray(tags) ? tags : String(tags || "").split(",").map((t: string) => t.trim()).filter(Boolean),
       published: Boolean(published),
+      categoryId: categoryId || null,
+      coverUrl: coverUrl || "",
+      paid: Boolean(paid),
+      price: Number(price) || 0,
+      freeContent: freeContent || "",
     });
 
     // 发布文章时发送通知（异步，不阻塞响应）

@@ -62,6 +62,18 @@ export default function AdminLayout({
             新建文章
           </Link>
           <Link
+            href="/admin/categories"
+            className="text-sm text-gray-500 hover:text-blue-600"
+          >
+            分类管理
+          </Link>
+          <Link
+            href="/admin/users"
+            className="text-sm text-gray-500 hover:text-blue-600"
+          >
+            用户管理
+          </Link>
+          <Link
             href="/admin/settings"
             className="text-sm text-gray-500 hover:text-blue-600"
           >

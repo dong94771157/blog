@@ -1,4 +1,4 @@
-import { Post, PostInput, KVNamespace } from "./types";
+import { Post, PostInput, Category, User, Purchase, KVNamespace } from "./types";
 
 /**
  * EdgeOne KV 存储抽象层
@@ -156,7 +156,12 @@ export async function createPost(input: PostInput): Promise<Post> {
     content: input.content,
     excerpt: input.excerpt || makeExcerpt(input.content),
     tags: input.tags || [],
+    categoryId: input.categoryId || null,
+    coverUrl: input.coverUrl || "",
     published: input.published ?? false,
+    paid: input.paid ?? false,
+    price: input.price ?? 0,
+    freeContent: input.freeContent || "",
     createdAt: now,
     updatedAt: now,
   };
@@ -201,4 +206,248 @@ export async function deletePost(id: string): Promise<boolean> {
   await kv.delete(`${POST_PREFIX}${id}`);
   await kv.delete(`${SLUG_PREFIX}${existing.slug}`);
   return true;
+}
+
+// ---- 分类 CRUD ----
+const CATEGORY_PREFIX = "category:";
+const CATEGORY_SLUG_PREFIX = "category-slug:";
+
+export async function getAllCategories(): Promise<Category[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: CATEGORY_PREFIX, limit: 256 });
+  const categories: Category[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        categories.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return categories.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function getCategoryById(id: string): Promise<Category | null> {
+  const kv = getKV();
+  const raw = await kv.get(`${CATEGORY_PREFIX}${id}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export async function getCategoryBySlug(slug: string): Promise<Category | null> {
+  const kv = getKV();
+  const id = await kv.get(`${CATEGORY_SLUG_PREFIX}${slug}`);
+  if (!id) return null;
+  return getCategoryById(id);
+}
+
+export async function createCategory(input: Omit<Category, "id" | "createdAt">): Promise<Category> {
+  const kv = getKV();
+  const id = generateId();
+  let slug = slugify(input.slug || input.name);
+  if (!slug) slug = `cat-${id}`;
+  const existing = await kv.get(`${CATEGORY_SLUG_PREFIX}${slug}`);
+  if (existing) slug = `${slug}-${id.slice(-4)}`;
+
+  const category: Category = {
+    ...input,
+    slug,
+    id,
+    createdAt: Date.now(),
+  };
+  await kv.put(`${CATEGORY_PREFIX}${id}`, JSON.stringify(category));
+  await kv.put(`${CATEGORY_SLUG_PREFIX}${slug}`, id);
+  return category;
+}
+
+export async function updateCategory(id: string, input: Partial<Category>): Promise<Category | null> {
+  const existing = await getCategoryById(id);
+  if (!existing) return null;
+  const kv = getKV();
+  const updated: Category = { ...existing, ...input, id, createdAt: existing.createdAt };
+  // slug 变了更新索引
+  if (input.slug && slugify(input.slug) !== existing.slug) {
+    let newSlug = slugify(input.slug);
+    const conflict = await kv.get(`${CATEGORY_SLUG_PREFIX}${newSlug}`);
+    if (conflict && conflict !== id) newSlug = `${newSlug}-${id.slice(-4)}`;
+    await kv.delete(`${CATEGORY_SLUG_PREFIX}${existing.slug}`);
+    updated.slug = newSlug;
+    await kv.put(`${CATEGORY_SLUG_PREFIX}${newSlug}`, id);
+  }
+  await kv.put(`${CATEGORY_PREFIX}${id}`, JSON.stringify(updated));
+  return updated;
+}
+
+export async function deleteCategory(id: string): Promise<boolean> {
+  const existing = await getCategoryById(id);
+  if (!existing) return false;
+  const kv = getKV();
+  await kv.delete(`${CATEGORY_PREFIX}${id}`);
+  await kv.delete(`${CATEGORY_SLUG_PREFIX}${existing.slug}`);
+  // 将该分类下的文章 categoryId 置空
+  const posts = await getAllPosts(true);
+  for (const post of posts) {
+    if (post.categoryId === id) {
+      await updatePost(post.id, { categoryId: null });
+    }
+  }
+  return true;
+}
+
+// ---- 用户 CRUD ----
+const USER_PREFIX = "user:";
+const USER_NAME_PREFIX = "user-name:"; // username -> id 索引
+const USER_EMAIL_PREFIX = "user-email:"; // email -> id 索引
+
+export async function getUserById(id: string): Promise<User | null> {
+  const kv = getKV();
+  const raw = await kv.get(`${USER_PREFIX}${id}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export async function getUserByUsername(username: string): Promise<User | null> {
+  const kv = getKV();
+  const id = await kv.get(`${USER_NAME_PREFIX}${username.toLowerCase()}`);
+  if (!id) return null;
+  return getUserById(id);
+}
+
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const kv = getKV();
+  const id = await kv.get(`${USER_EMAIL_PREFIX}${email.toLowerCase()}`);
+  if (!id) return null;
+  return getUserById(id);
+}
+
+export async function getAllUsers(): Promise<User[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: USER_PREFIX, limit: 256 });
+  const users: User[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        users.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return users.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function createUser(input: Omit<User, "id" | "createdAt">): Promise<User> {
+  const kv = getKV();
+  const id = generateId();
+  const user: User = { ...input, id, createdAt: Date.now() };
+  await kv.put(`${USER_PREFIX}${id}`, JSON.stringify(user));
+  await kv.put(`${USER_NAME_PREFIX}${input.username.toLowerCase()}`, id);
+  await kv.put(`${USER_EMAIL_PREFIX}${input.email.toLowerCase()}`, id);
+  return user;
+}
+
+export async function updateUser(id: string, input: Partial<User>): Promise<User | null> {
+  const existing = await getUserById(id);
+  if (!existing) return null;
+  const kv = getKV();
+  const updated: User = { ...existing, ...input, id, createdAt: existing.createdAt };
+  await kv.put(`${USER_PREFIX}${id}`, JSON.stringify(updated));
+  return updated;
+}
+
+export async function deleteUser(id: string): Promise<boolean> {
+  const existing = await getUserById(id);
+  if (!existing) return false;
+  const kv = getKV();
+  await kv.delete(`${USER_PREFIX}${id}`);
+  await kv.delete(`${USER_NAME_PREFIX}${existing.username.toLowerCase()}`);
+  await kv.delete(`${USER_EMAIL_PREFIX}${existing.email.toLowerCase()}`);
+  return true;
+}
+
+// ---- 购买记录 CRUD ----
+const PURCHASE_PREFIX = "purchase:";
+const PURCHASE_USER_POST_PREFIX = "purchase-up:"; // userId:postId -> purchaseId 索引
+
+export async function createPurchase(input: Omit<Purchase, "id" | "createdAt">): Promise<Purchase> {
+  const kv = getKV();
+  const id = generateId();
+  const purchase: Purchase = { ...input, id, createdAt: Date.now() };
+  await kv.put(`${PURCHASE_PREFIX}${id}`, JSON.stringify(purchase));
+  await kv.put(`${PURCHASE_USER_POST_PREFIX}${input.userId}:${input.postId}`, id);
+  return purchase;
+}
+
+/** 检查用户是否已购买某文章 */
+export async function hasPurchased(userId: string, postId: string): Promise<boolean> {
+  const kv = getKV();
+  const id = await kv.get(`${PURCHASE_USER_POST_PREFIX}${userId}:${postId}`);
+  return !!id;
+}
+
+/** 获取用户所有购买记录 */
+export async function getUserPurchases(userId: string): Promise<Purchase[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: `${PURCHASE_PREFIX}`, limit: 256 });
+  const purchases: Purchase[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as Purchase;
+        if (p.userId === userId) purchases.push(p);
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return purchases.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** 获取文章的所有购买记录 */
+export async function getPostPurchases(postId: string): Promise<Purchase[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: `${PURCHASE_PREFIX}`, limit: 256 });
+  const purchases: Purchase[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as Purchase;
+        if (p.postId === postId) purchases.push(p);
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return purchases.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** 获取所有购买记录（后台用） */
+export async function getAllPurchases(): Promise<Purchase[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: PURCHASE_PREFIX, limit: 256 });
+  const purchases: Purchase[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        purchases.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return purchases.sort((a, b) => b.createdAt - a.createdAt);
 }

@@ -6,7 +6,13 @@ export interface Post {
   content: string;
   excerpt: string;
   tags: string[];
+  categoryId: string | null;
+  coverUrl: string;
   published: boolean;
+  // 付费阅读
+  paid: boolean;
+  price: number;
+  freeContent: string; // 免费预览部分（markdown）
   createdAt: number;
   updatedAt: number;
 }
@@ -17,7 +23,46 @@ export interface PostInput {
   content: string;
   excerpt?: string;
   tags?: string[];
+  categoryId?: string | null;
+  coverUrl?: string;
   published?: boolean;
+  paid?: boolean;
+  price?: number;
+  freeContent?: string;
+}
+
+// ===== 分类 =====
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  color: string; // 分类标签颜色
+  createdAt: number;
+}
+
+// ===== 用户（读者） =====
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  avatar: string; // 头像 URL（可选）
+  balance: number; // 账户余额（充值后用于购买文章）
+  createdAt: number;
+}
+
+// 用户信息（不含敏感字段）
+export type PublicUser = Omit<User, "passwordHash">;
+
+// ===== 购买记录 =====
+export interface Purchase {
+  id: string;
+  userId: string;
+  postId: string;
+  postTitle: string;
+  amount: number;
+  createdAt: number;
 }
 
 // ===== KV 存储接口 =====

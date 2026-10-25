@@ -3,56 +3,136 @@
 @tailwind utilities;
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply antialiased;
+  background: linear-gradient(180deg, #fdf2f8 0%, #fff5f9 40%, #fdf2f8 100%);
+  color: #4a3040;
+  min-height: 100vh;
 }
 
-/* Markdown 文章内容样式 */
+/* 粉色系滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #fce7f3;
+}
+::-webkit-scrollbar-thumb {
+  background: #f9a8d4;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ec4899;
+}
+
+/* 浮动动画（装饰元素） */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* 渐变文字 */
+.text-gradient-pink {
+  background: linear-gradient(135deg, #ec4899, #f472b6, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* 玻璃卡片 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(244, 114, 182, 0.2);
+}
+
+/* Markdown 文章内容样式 - 粉色二次元风 */
 .prose-blog h1 {
   @apply text-3xl font-bold mt-8 mb-4;
+  color: #be185d;
 }
 .prose-blog h2 {
   @apply text-2xl font-bold mt-6 mb-3;
+  color: #be185d;
+  border-bottom: 2px solid #fbcfe8;
+  padding-bottom: 0.5rem;
 }
 .prose-blog h3 {
   @apply text-xl font-semibold mt-5 mb-2;
+  color: #db2777;
 }
 .prose-blog p {
-  @apply leading-relaxed my-4 text-gray-700;
+  @apply leading-relaxed my-4;
+  color: #5b3a4a;
 }
 .prose-blog ul {
   @apply list-disc pl-6 my-4 space-y-1;
+  color: #5b3a4a;
 }
 .prose-blog ol {
   @apply list-decimal pl-6 my-4 space-y-1;
+  color: #5b3a4a;
 }
 .prose-blog code {
-  @apply bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm font-mono;
+  @apply px-1.5 py-0.5 rounded text-sm font-mono;
+  background: #fce7f3;
+  color: #db2777;
 }
 .prose-blog pre {
-  @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto;
+  @apply rounded-2xl p-4 my-4 overflow-x-auto;
+  background: #3b1f2e;
+  color: #fce7f3;
+  border: 1px solid rgba(244, 114, 182, 0.3);
 }
 .prose-blog pre code {
-  @apply bg-transparent text-gray-100 p-0;
+  @apply bg-transparent p-0;
+  color: #fce7f3;
 }
 .prose-blog blockquote {
-  @apply border-l-4 border-blue-500 bg-blue-50 pl-4 py-2 my-4 text-gray-600 italic;
+  @apply pl-4 py-3 my-4 rounded-r-lg;
+  border-left: 4px solid #f472b6;
+  background: linear-gradient(90deg, #fdf2f8, transparent);
+  color: #7c5063;
 }
 .prose-blog a {
-  @apply text-blue-600 hover:text-blue-800 underline;
+  @apply underline;
+  color: #db2777;
+}
+.prose-blog a:hover {
+  color: #be185d;
 }
 .prose-blog img {
-  @apply rounded-lg my-4 max-w-full;
+  @apply rounded-2xl my-4 max-w-full;
+  border: 2px solid #fbcfe8;
 }
 .prose-blog table {
   @apply w-full border-collapse my-4;
 }
 .prose-blog th,
 .prose-blog td {
-  @apply border border-gray-300 px-4 py-2 text-left;
+  @apply border px-4 py-2 text-left;
+  border-color: #fbcfe8;
 }
 .prose-blog th {
-  @apply bg-gray-100 font-semibold;
+  @apply font-semibold;
+  background: #fce7f3;
+  color: #be185d;
 }
 .prose-blog hr {
-  @apply border-gray-200 my-8;
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #f9a8d4, transparent);
+  margin: 2rem 0;
+}
+
+/* 付费内容模糊遮罩 */
+.paywall-blur {
+  filter: blur(6px);
+  user-select: none;
+  pointer-events: none;
 }

@@ -2,18 +2,26 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import type { Post } from "@/lib/types";
+import type { Post, Category } from "@/lib/types";
 
 export default function AdminHomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadPosts = useCallback(async () => {
     try {
-      const res = await fetch("/api/posts?all=1");
-      if (res.ok) {
-        const data = await res.json();
+      const [postsRes, catRes] = await Promise.all([
+        fetch("/api/posts?all=1"),
+        fetch("/api/categories"),
+      ]);
+      if (postsRes.ok) {
+        const data = await postsRes.json();
         setPosts(data.posts);
+      }
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        setCategories(catData.categories || []);
       }
     } finally {
       setLoading(false);
@@ -96,6 +104,9 @@ export default function AdminHomePage() {
                     </Link>
                     <div className="text-xs text-gray-400 mt-0.5">
                       /{post.slug}
+                      {post.paid && (
+                        <span className="ml-2 text-amber-600">🔒 ¥{post.price}</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">

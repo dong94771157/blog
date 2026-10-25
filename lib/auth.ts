@@ -84,3 +84,62 @@ export async function isAuthenticated(request: Request): Promise<boolean> {
 }
 
 export { COOKIE_NAME };
+
+// ===== 读者用户认证 =====
+const USER_COOKIE_NAME = "user_token";
+
+/** 密码哈希（SHA-256 + salt） */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = Math.random().toString(36).slice(2, 10);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(salt + password);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  const hashHex = [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `${salt}:${hashHex}`;
+}
+
+/** 验证密码 */
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const [salt, hashHex] = stored.split(":");
+  if (!salt || !hashHex) return false;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(salt + password);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  const computed = [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return computed === hashHex;
+}
+
+/** 从请求中提取 cookie 值 */
+function getCookie(request: Request, name: string): string | undefined {
+  const cookie = request.headers.get("cookie") || "";
+  return cookie
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith(`${name}=`))
+    ?.split("=")[1];
+}
+
+/** 生成用户 token */
+export async function signUserToken(userId: string, username: string): Promise<string> {
+  return signToken({ sub: userId, username, role: "user" }, 30 * 24 * 3600);
+}
+
+/** 从请求中获取当前登录用户 ID（读者），未登录返回 null */
+export async function getCurrentUserId(request: Request): Promise<string | null> {
+  const token = getCookie(request, USER_COOKIE_NAME);
+  if (!token) return null;
+  const payload = await verifyToken(token);
+  if (!payload || payload.role !== "user" || !payload.sub) return null;
+  return payload.sub as string;
+}
+
+/** 从请求中获取当前登录用户名（读者） */
+export async function getCurrentUsername(request: Request): Promise<string | null> {
+  const token = getCookie(request, USER_COOKIE_NAME);
+  if (!token) return null;
+  const payload = await verifyToken(token);
+  if (!payload || payload.role !== "user" || !payload.username) return null;
+  return payload.username as string;
+}
+
+export { USER_COOKIE_NAME };
