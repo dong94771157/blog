@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+/* Markdown 文章内容样式 */
+.prose-blog h1 {
+  @apply text-3xl font-bold mt-8 mb-4;
+}
+.prose-blog h2 {
+  @apply text-2xl font-bold mt-6 mb-3;
+}
+.prose-blog h3 {
+  @apply text-xl font-semibold mt-5 mb-2;
+}
+.prose-blog p {
+  @apply leading-relaxed my-4 text-gray-700;
+}
+.prose-blog ul {
+  @apply list-disc pl-6 my-4 space-y-1;
+}
+.prose-blog ol {
+  @apply list-decimal pl-6 my-4 space-y-1;
+}
+.prose-blog code {
+  @apply bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-sm font-mono;
+}
+.prose-blog pre {
+  @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto;
+}
+.prose-blog pre code {
+  @apply bg-transparent text-gray-100 p-0;
+}
+.prose-blog blockquote {
+  @apply border-l-4 border-blue-500 bg-blue-50 pl-4 py-2 my-4 text-gray-600 italic;
+}
+.prose-blog a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+.prose-blog img {
+  @apply rounded-lg my-4 max-w-full;
+}
+.prose-blog table {
+  @apply w-full border-collapse my-4;
+}
+.prose-blog th,
+.prose-blog td {
+  @apply border border-gray-300 px-4 py-2 text-left;
+}
+.prose-blog th {
+  @apply bg-gray-100 font-semibold;
+}
+.prose-blog hr {
+  @apply border-gray-200 my-8;
+}
