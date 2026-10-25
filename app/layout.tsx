@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import { getSiteSettings } from "@/lib/settings";
 import UserMenu from "@/components/UserMenu";
+import MusicPlayer from "@/components/MusicPlayer";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteSettings();
@@ -96,6 +97,7 @@ export default async function RootLayout({
             </div>
           </div>
         </footer>
+        <MusicPlayer />
       </body>
     </html>
   );

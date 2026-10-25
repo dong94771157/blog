@@ -1,3 +1,14 @@
+// ===== 软件下载 =====
+export interface DownloadItem {
+  id: string;
+  name: string; // 软件名称
+  url: string; // 下载链接
+  size: string; // 文件大小（如 "12.5 MB"）
+  platform: string; // 平台（如 "Windows" / "macOS" / "Android"）
+  version: string; // 版本号
+  note: string; // 备注（如 "含激活教程"）
+}
+
 // ===== 文章类型 =====
 export interface Post {
   id: string;
@@ -13,6 +24,8 @@ export interface Post {
   paid: boolean;
   price: number;
   freeContent: string; // 免费预览部分（markdown）
+  // 软件下载
+  downloads: DownloadItem[];
   createdAt: number;
   updatedAt: number;
 }
@@ -29,6 +42,7 @@ export interface PostInput {
   paid?: boolean;
   price?: number;
   freeContent?: string;
+  downloads?: DownloadItem[];
 }
 
 // ===== 分类 =====

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, slug, content, excerpt, tags, published, categoryId, coverUrl, paid, price, freeContent } = body;
+    const { title, slug, content, excerpt, tags, published, categoryId, coverUrl, paid, price, freeContent, downloads } = body;
 
     if (!title || !content) {
       return NextResponse.json(
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       paid: Boolean(paid),
       price: Number(price) || 0,
       freeContent: freeContent || "",
+      downloads: Array.isArray(downloads) ? downloads : [],
     });
 
     // 发布文章时发送通知（异步，不阻塞响应）

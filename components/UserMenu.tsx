@@ -107,78 +107,125 @@ export default function UserMenu() {
   if (showAuth) {
     return (
       <div
-        className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-gradient-to-br from-pink-200/40 to-purple-200/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         onClick={() => setShowAuth(false)}
       >
         <div
-          className="bg-white rounded-2xl p-6 w-full max-w-sm border-2 border-pink-100"
+          className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl shadow-pink-200/50 border border-pink-100 animate-[fadeIn_0.2s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-lg text-gray-800">
-              {authMode === "login" ? "登录" : "注册"} <span className="text-pink-400">♡</span>
-            </h3>
-            <button onClick={() => setShowAuth(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+          {/* 顶部装饰 */}
+          <div className="bg-gradient-to-r from-pink-500 via-pink-400 to-purple-400 px-6 pt-6 pb-8 relative">
+            <button
+              onClick={() => setShowAuth(false)}
+              className="absolute top-3 right-4 w-7 h-7 rounded-full bg-white/20 text-white hover:bg-white/40 flex items-center justify-center text-lg leading-none transition-colors"
+            >
+              ×
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/25 backdrop-blur flex items-center justify-center text-2xl">
+                {authMode === "login" ? "🌸" : "✨"}
+              </div>
+              <div>
+                <h3 className="font-bold text-xl text-white">
+                  {authMode === "login" ? "欢迎回来" : "加入我们"}
+                </h3>
+                <p className="text-white/70 text-xs mt-0.5">
+                  {authMode === "login" ? "登录账号继续阅读之旅" : "注册账号解锁全部功能"}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-3">
+          {/* 表单 */}
+          <form onSubmit={handleAuth} className="p-6 space-y-4">
             {error && (
-              <div className="bg-red-50 text-red-500 text-sm px-3 py-2 rounded-lg">{error}</div>
-            )}
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">
-                {authMode === "login" ? "用户名或邮箱" : "用户名"}
-              </label>
-              <input
-                value={account}
-                onChange={(e) => setAccount(e.target.value)}
-                className="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                required
-              />
-            </div>
-            {authMode === "register" && (
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">邮箱</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                  required
-                />
+              <div className="bg-red-50 text-red-500 text-sm px-4 py-2.5 rounded-xl border border-red-100 flex items-center gap-2">
+                <span>⚠️</span> {error}
               </div>
             )}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">密码</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
-                required
-              />
+              <label className="block text-xs font-medium text-pink-500 mb-1.5">
+                {authMode === "login" ? "用户名或邮箱" : "用户名"}
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-300 text-sm">
+                  {authMode === "login" ? "👤" : "🏷️"}
+                </span>
+                <input
+                  value={account}
+                  onChange={(e) => setAccount(e.target.value)}
+                  className="w-full border border-pink-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-pink-50/30 placeholder:text-pink-200 transition-all"
+                  placeholder={authMode === "login" ? "输入用户名或邮箱" : "设置用户名"}
+                  required
+                />
+              </div>
+            </div>
+            {authMode === "register" && (
+              <div>
+                <label className="block text-xs font-medium text-pink-500 mb-1.5">
+                  邮箱
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-300 text-sm">
+                    ✉️
+                  </span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border border-pink-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-pink-50/30 placeholder:text-pink-200 transition-all"
+                    placeholder="输入邮箱地址"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-pink-500 mb-1.5">
+                密码
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-300 text-sm">
+                  🔒
+                </span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full border border-pink-200 rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-pink-50/30 placeholder:text-pink-200 transition-all"
+                  placeholder="输入密码"
+                  required
+                />
+              </div>
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-400 text-white font-medium hover:opacity-90 disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 transition-all shadow-lg shadow-pink-200 hover:shadow-pink-300"
             >
-              {loading ? "处理中..." : authMode === "login" ? "登录" : "注册"}
+              {loading ? "处理中..." : authMode === "login" ? "登录 ✨" : "注册 ✨"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-4">
-            {authMode === "login" ? "还没有账号？" : "已有账号？"}
-            <button
-              onClick={() => {
-                setAuthMode(authMode === "login" ? "register" : "login");
-                setError("");
-              }}
-              className="text-pink-500 hover:text-pink-700 ml-1"
-            >
-              {authMode === "login" ? "去注册" : "去登录"}
-            </button>
-          </p>
+          {/* 底部切换 */}
+          <div className="px-6 pb-6 -mt-2">
+            <div className="text-center text-sm text-gray-400 bg-pink-50/50 rounded-xl py-3">
+              {authMode === "login" ? "还没有账号？" : "已有账号？"}
+              <button
+                onClick={() => {
+                  setAuthMode(authMode === "login" ? "register" : "login");
+                  setError("");
+                }}
+                className="text-pink-500 hover:text-pink-700 font-medium ml-1 underline underline-offset-2"
+              >
+                {authMode === "login" ? "去注册" : "去登录"}
+              </button>
+            </div>
+            <p className="text-center text-xs text-pink-300 mt-3">
+              ✿ 注册即可购买付费文章与余额充值 ✿
+            </p>
+          </div>
         </div>
       </div>
     );

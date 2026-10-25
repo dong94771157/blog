@@ -33,7 +33,7 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { title, slug, content, excerpt, tags, published, categoryId, coverUrl, paid, price, freeContent } = body;
+    const { title, slug, content, excerpt, tags, published, categoryId, coverUrl, paid, price, freeContent, downloads } = body;
 
     const before = await getPostById(id);
     const post = await updatePost(id, {
@@ -52,6 +52,7 @@ export async function PUT(
       ...(paid !== undefined && { paid: Boolean(paid) }),
       ...(price !== undefined && { price: Number(price) || 0 }),
       ...(freeContent !== undefined && { freeContent: freeContent || "" }),
+      ...(downloads !== undefined && { downloads: Array.isArray(downloads) ? downloads : [] }),
     });
 
     if (!post) {

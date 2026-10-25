@@ -162,6 +162,7 @@ export async function createPost(input: PostInput): Promise<Post> {
     paid: input.paid ?? false,
     price: input.price ?? 0,
     freeContent: input.freeContent || "",
+    downloads: input.downloads || [],
     createdAt: now,
     updatedAt: now,
   };

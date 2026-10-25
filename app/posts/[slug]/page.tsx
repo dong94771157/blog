@@ -143,6 +143,57 @@ export default async function PostPage({
         dangerouslySetInnerHTML={{ __html: displayHtml }}
       />
 
+      {/* 软件下载区（付费文章需购买后可见） */}
+      {!needPaywall && post.downloads && post.downloads.length > 0 && (
+        <div className="mt-10 mb-8 rounded-2xl border border-pink-200 bg-gradient-to-br from-pink-50/80 to-purple-50/50 p-6 shadow-lg shadow-pink-100/50">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">💾</span>
+            <h2 className="text-lg font-bold text-pink-600">软件下载</h2>
+            <span className="text-xs text-pink-400 ml-auto">
+              共 {post.downloads.length} 个下载项
+            </span>
+          </div>
+          <div className="space-y-3">
+            {post.downloads.map((d, idx) => (
+              <div
+                key={d.id}
+                className="bg-white/80 rounded-xl p-4 border border-pink-100 hover:border-pink-300 hover:shadow-md transition-all"
+              >
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="font-bold text-gray-800">{d.name}</span>
+                  {d.version && (
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-purple-50 text-purple-500 font-medium">
+                      v{d.version}
+                    </span>
+                  )}
+                  {d.platform && (
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-sky-50 text-sky-500 font-medium">
+                      {d.platform}
+                    </span>
+                  )}
+                  {d.size && (
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">
+                      {d.size}
+                    </span>
+                  )}
+                </div>
+                {d.note && (
+                  <p className="text-xs text-gray-400 mb-2.5">{d.note}</p>
+                )}
+                <a
+                  href={d.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white text-sm font-medium hover:from-pink-600 hover:to-purple-600 transition-all shadow-md shadow-pink-200"
+                >
+                  ⬇ 下载{post.downloads.length > 1 ? ` #${idx + 1}` : ""}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {needPaywall && (
         <PaywallCard
           postId={post.id}
