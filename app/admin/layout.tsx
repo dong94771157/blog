@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/admin/categories", label: "分类管理", icon: "🏷️" },
   { href: "/admin/users", label: "用户管理", icon: "👥" },
   { href: "/admin/orders", label: "订单管理", icon: "💰" },
+  { href: "/admin/comments", label: "留言管理", icon: "💬" },
   { href: "/admin/settings", label: "网站设置", icon: "⚙️" },
 ];
 

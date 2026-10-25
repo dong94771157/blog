@@ -5,9 +5,10 @@ import type {
   SiteSettings,
   NotifySettings,
   PaymentSettings,
+  AISettings,
 } from "@/lib/types";
 
-type Tab = "site" | "notify" | "payment";
+type Tab = "site" | "notify" | "payment" | "ai";
 
 const inputCls =
   "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -20,20 +21,23 @@ export default function SettingsPage() {
   const [site, setSite] = useState<SiteSettings | null>(null);
   const [notify, setNotify] = useState<NotifySettings | null>(null);
   const [payment, setPayment] = useState<PaymentSettings | null>(null);
+  const [ai, setAi] = useState<AISettings | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     (async () => {
-      const [s, n, p] = await Promise.all([
+      const [s, n, p, a] = await Promise.all([
         fetch("/api/settings?type=site").then((r) => r.json()),
         fetch("/api/settings?type=notify").then((r) => r.json()),
         fetch("/api/settings?type=payment").then((r) => r.json()),
+        fetch("/api/settings?type=ai").then((r) => r.json()),
       ]);
       setSite(s.settings);
       setNotify(n.settings);
       setPayment(p.settings);
+      setAi(a.settings);
     })();
   }, []);
 
@@ -55,6 +59,7 @@ export default function SettingsPage() {
         if (type === "site") setSite(d.settings);
         if (type === "notify") setNotify(d.settings);
         if (type === "payment") setPayment(d.settings);
+        if (type === "ai") setAi(d.settings);
         flash("保存成功");
       } else {
         flash("保存失败");
@@ -83,7 +88,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (!site || !notify || !payment) {
+  if (!site || !notify || !payment || !ai) {
     return <div className="text-center py-20 text-gray-400">加载中...</div>;
   }
 
@@ -97,6 +102,7 @@ export default function SettingsPage() {
             ["site", "网站信息"],
             ["notify", "通知配置"],
             ["payment", "支付配置"],
+            ["ai", "AI 配置"],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -124,6 +130,7 @@ export default function SettingsPage() {
         <NotifyForm notify={notify} setNotify={setNotify} save={save} saving={saving} testNotify={testNotify} testing={testing} />
       )}
       {tab === "payment" && <PaymentForm payment={payment} setPayment={setPayment} save={save} saving={saving} />}
+      {tab === "ai" && <AIForm ai={ai} setAi={setAi} save={save} saving={saving} />}
     </div>
   );
 }
@@ -548,6 +555,204 @@ function PaymentForm({
 
       <button onClick={() => save("payment", payment)} disabled={saving} className={btnCls}>
         {saving ? "保存中..." : "保存支付配置"}
+      </button>
+    </div>
+  );
+}
+
+// ---- AI 配置表单 ----
+function AIForm({
+  ai,
+  setAi,
+  save,
+  saving,
+}: {
+  ai: AISettings;
+  setAi: (a: AISettings) => void;
+  save: (type: Tab, data: unknown) => void;
+  saving: boolean;
+}) {
+  function update<K extends keyof AISettings>(key: K, value: AISettings[K]) {
+    setAi({ ...ai, [key]: value });
+  }
+
+  const PROVIDERS: { value: string; label: string }[] = [
+    { value: "openai", label: "OpenAI" },
+    { value: "deepseek", label: "DeepSeek（深度求索）" },
+    { value: "qwen", label: "通义千问（阿里）" },
+    { value: "zhipu", label: "智谱清言（GLM）" },
+    { value: "moonshot", label: "月之暗面（Kimi）" },
+    { value: "siliconflow", label: "硅基流动（SiliconFlow）" },
+    { value: "ollama", label: "Ollama（本地部署）" },
+    { value: "custom", label: "自定义接口" },
+  ];
+
+  const PRESET_URLS: Record<string, string> = {
+    openai: "https://api.openai.com/v1",
+    deepseek: "https://api.deepseek.com/v1",
+    qwen: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    zhipu: "https://open.bigmodel.cn/api/paas/v4",
+    moonshot: "https://api.moonshot.cn/v1",
+    siliconflow: "https://api.siliconflow.cn/v1",
+    ollama: "http://localhost:11434/v1",
+  };
+
+  function handleProviderChange(provider: string) {
+    setAi({
+      ...ai,
+      provider: provider as AISettings["provider"],
+      apiUrl: PRESET_URLS[provider] || ai.apiUrl,
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* AI 客服 */}
+      <div className="bg-white border rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="font-medium text-gray-900">🤖 AI 客服助手</h3>
+          <label className="flex items-center gap-1 text-sm text-gray-500">
+            <input
+              type="checkbox"
+              checked={ai.enabled}
+              onChange={(e) => update("enabled", e.target.checked)}
+            />
+            启用
+          </label>
+        </div>
+        {ai.enabled && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>接口提供商</label>
+                <select
+                  className={inputCls}
+                  value={ai.provider}
+                  onChange={(e) => handleProviderChange(e.target.value)}
+                >
+                  {PROVIDERS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  所有接口均兼容 OpenAI 格式
+                </p>
+              </div>
+              <div>
+                <label className={labelCls}>模型名称</label>
+                <input
+                  className={inputCls}
+                  value={ai.model}
+                  onChange={(e) => update("model", e.target.value)}
+                  placeholder="如 gpt-4o-mini / deepseek-chat"
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>API 地址（Base URL）</label>
+              <input
+                className={inputCls}
+                value={ai.apiUrl}
+                onChange={(e) => update("apiUrl", e.target.value)}
+                placeholder="https://api.openai.com/v1"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>API Key</label>
+              <input
+                type="password"
+                className={inputCls}
+                value={ai.apiKey}
+                onChange={(e) => update("apiKey", e.target.value)}
+                placeholder="sk-..."
+              />
+            </div>
+            <div>
+              <label className={labelCls}>客服人设提示词（System Prompt）</label>
+              <textarea
+                className={inputCls + " h-28 text-sm"}
+                value={ai.systemPrompt}
+                onChange={(e) => update("systemPrompt", e.target.value)}
+                placeholder="定义 AI 客服的性格和回答风格..."
+              />
+            </div>
+            <div>
+              <label className={labelCls}>
+                温度（Temperature）：{ai.temperature}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={ai.temperature}
+                onChange={(e) => update("temperature", Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>精确</span>
+                <span>创意</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* AI 留言审核 */}
+      <div className="bg-white border rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="font-medium text-gray-900">🛡️ AI 留言审核</h3>
+          <label className="flex items-center gap-1 text-sm text-gray-500">
+            <input
+              type="checkbox"
+              checked={ai.moderationEnabled}
+              onChange={(e) => update("moderationEnabled", e.target.checked)}
+            />
+            启用
+          </label>
+        </div>
+        {ai.moderationEnabled && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500 bg-blue-50 rounded-lg px-3 py-2">
+              💡 开启后，访客留言将自动经过 AI 审核。违规留言自动拦截，并可通过邮件通知站长。
+            </p>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={ai.autoApprove}
+                  onChange={(e) => update("autoApprove", e.target.checked)}
+                />
+                无违规时自动通过（关闭则进入待审核）
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={ai.notifyOnViolation}
+                  onChange={(e) => update("notifyOnViolation", e.target.checked)}
+                />
+                发现违规时邮件通知站长（需配置 SMTP）
+              </label>
+            </div>
+            <div>
+              <label className={labelCls}>审核提示词（可自定义审核规则）</label>
+              <textarea
+                className={inputCls + " h-28 text-xs font-mono"}
+                value={ai.moderationPrompt}
+                onChange={(e) => update("moderationPrompt", e.target.value)}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                AI 需返回 JSON：{"{"}violated, reason, category{"}"}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => save("ai", ai)} disabled={saving} className={btnCls}>
+        {saving ? "保存中..." : "保存 AI 配置"}
       </button>
     </div>
   );

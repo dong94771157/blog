@@ -4,6 +4,7 @@ import "./globals.css";
 import { getSiteSettings } from "@/lib/settings";
 import UserMenu from "@/components/UserMenu";
 import MusicPlayer from "@/components/MusicPlayer";
+import AIChat from "@/components/AIChat";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteSettings();
@@ -98,6 +99,7 @@ export default async function RootLayout({
           </div>
         </footer>
         <MusicPlayer />
+        <AIChat />
       </body>
     </html>
   );

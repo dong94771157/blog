@@ -7,6 +7,8 @@ import {
   saveNotifySettings,
   getPaymentSettings,
   savePaymentSettings,
+  getAISettings,
+  saveAISettings,
 } from "@/lib/settings";
 
 // 获取设置（type 参数区分：site / notify / payment）
@@ -23,6 +25,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ settings: await getNotifySettings() });
     case "payment":
       return NextResponse.json({ settings: await getPaymentSettings() });
+    case "ai":
+      return NextResponse.json({ settings: await getAISettings() });
     default:
       return NextResponse.json({ error: "未知设置类型" }, { status: 400 });
   }
@@ -45,6 +49,8 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ settings: await saveNotifySettings(settings) });
       case "payment":
         return NextResponse.json({ settings: await savePaymentSettings(settings) });
+      case "ai":
+        return NextResponse.json({ settings: await saveAISettings(settings) });
       default:
         return NextResponse.json({ error: "未知设置类型" }, { status: 400 });
     }

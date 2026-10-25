@@ -12,6 +12,7 @@ import { verifyToken } from "@/lib/auth";
 import { marked } from "marked";
 import DonateButton from "@/components/DonateButton";
 import PaywallCard from "@/components/PaywallCard";
+import Comments from "@/components/Comments";
 import type { Category } from "@/lib/types";
 
 // 付费文章需根据用户登录状态动态渲染
@@ -55,6 +56,7 @@ export default async function PostPage({
   let loggedIn = false;
   let balance = 0;
   let purchased = false;
+  let username = "";
 
   const cookieStore = await cookies();
   const userToken = cookieStore.get("user_token")?.value;
@@ -65,6 +67,7 @@ export default async function PostPage({
       if (user) {
         loggedIn = true;
         balance = user.balance;
+        username = user.username;
         purchased = await hasPurchased(user.id, post.id);
       }
     }
@@ -217,6 +220,12 @@ export default async function PostPage({
           }}
         />
       )}
+
+      <Comments
+        postId={post.id}
+        loggedIn={loggedIn}
+        username={username}
+      />
     </article>
   );
 }

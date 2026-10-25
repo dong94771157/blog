@@ -3,17 +3,22 @@ import {
   SiteSettings,
   NotifySettings,
   PaymentSettings,
+  AISettings,
   Order,
+  Comment,
   defaultSiteSettings,
   defaultNotifySettings,
   defaultPaymentSettings,
+  defaultAISettings,
 } from "./types";
 
 // KV 键名
 const KEY_SITE = "settings:site";
 const KEY_NOTIFY = "settings:notify";
 const KEY_PAYMENT = "settings:payment";
+const KEY_AI = "settings:ai";
 const ORDER_PREFIX = "order:";
+const COMMENT_PREFIX = "comment:";
 
 // 深度合并（保留默认值中用户未覆盖的字段）
 function deepMerge<T>(defaults: T, overrides: Partial<T>): T {
@@ -133,4 +138,86 @@ export async function getAllOrders(): Promise<Order[]> {
     }
   }
   return orders.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+// ---- AI 配置 ----
+export async function getAISettings(): Promise<AISettings> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_AI);
+  if (!raw) return { ...defaultAISettings };
+  try {
+    return deepMerge(defaultAISettings, JSON.parse(raw));
+  } catch {
+    return { ...defaultAISettings };
+  }
+}
+
+export async function saveAISettings(settings: Partial<AISettings>): Promise<AISettings> {
+  const kv = getKV();
+  const merged = deepMerge(await getAISettings(), settings);
+  await kv.put(KEY_AI, JSON.stringify(merged));
+  return merged;
+}
+
+// ---- 留言 ----
+export async function createComment(comment: Comment): Promise<void> {
+  const kv = getKV();
+  await kv.put(`${COMMENT_PREFIX}${comment.id}`, JSON.stringify(comment));
+}
+
+export async function getComment(id: string): Promise<Comment | null> {
+  const kv = getKV();
+  const raw = await kv.get(`${COMMENT_PREFIX}${id}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Comment;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateComment(id: string, updates: Partial<Comment>): Promise<Comment | null> {
+  const existing = await getComment(id);
+  if (!existing) return null;
+  const kv = getKV();
+  const updated = { ...existing, ...updates };
+  await kv.put(`${COMMENT_PREFIX}${id}`, JSON.stringify(updated));
+  return updated;
+}
+
+export async function getCommentsByPost(postId: string): Promise<Comment[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: COMMENT_PREFIX, limit: 500 });
+  const comments: Comment[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        const c = JSON.parse(raw) as Comment;
+        if (c.postId === postId && c.status === "approved") {
+          comments.push(c);
+        }
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return comments.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function getAllComments(): Promise<Comment[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: COMMENT_PREFIX, limit: 500 });
+  const comments: Comment[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        comments.push(JSON.parse(raw));
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return comments.sort((a, b) => b.createdAt - a.createdAt);
 }

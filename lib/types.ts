@@ -241,3 +241,52 @@ export interface Order {
   createdAt: number;
   paidAt: number | null;
 }
+
+// ===== AI 配置 =====
+export interface AISettings {
+  enabled: boolean; // AI 客服总开关
+  provider: "openai" | "deepseek" | "qwen" | "zhipu" | "moonshot" | "siliconflow" | "ollama" | "custom";
+  apiUrl: string; // API 基础地址（如 https://api.openai.com/v1）
+  apiKey: string;
+  model: string; // 模型名（如 gpt-4o-mini / deepseek-chat）
+  systemPrompt: string; // 客服人设提示词
+  temperature: number;
+  // 留言 AI 审核
+  moderationEnabled: boolean; // AI 自动审核留言开关
+  autoApprove: boolean; // 无违规时自动通过（否则进入待审核）
+  moderationPrompt: string; // 审核提示词（可自定义规则）
+  notifyOnViolation: boolean; // 发现违规时邮件通知站长
+}
+
+export const defaultAISettings: AISettings = {
+  enabled: false,
+  provider: "openai",
+  apiUrl: "https://api.openai.com/v1",
+  apiKey: "",
+  model: "gpt-4o-mini",
+  systemPrompt:
+    "你是一个友好可爱的二次元博客客服助手，名字叫小樱。用亲切的语气回答访客关于博客内容、付费阅读、软件下载等问题。回答要简洁有趣，可以适当使用表情符号。如果不知道答案，请引导用户联系站长。",
+  temperature: 0.7,
+  moderationEnabled: false,
+  autoApprove: true,
+  moderationPrompt:
+    "你是一个内容审核员。请判断以下留言是否包含：1.广告/垃圾信息 2.辱骂/人身攻击 3.色情/低俗内容 4.政治敏感/违法违规内容 5.诈骗/钓鱼链接。只回复JSON格式：{\"violated\":true/false,\"reason\":\"违规原因(无违规则为空)\",\"category\":\"spam/abuse/porn/political/scam/none\"}",
+  notifyOnViolation: true,
+};
+
+// ===== 留言 =====
+export interface Comment {
+  id: string;
+  postId: string;
+  postTitle: string;
+  userId: string | null; // 已登录用户 ID
+  authorName: string; // 昵称（未登录时手填）
+  content: string;
+  status: "pending" | "approved" | "rejected";
+  aiReview: {
+    violated: boolean;
+    reason: string;
+    category: string;
+  } | null;
+  createdAt: number;
+}
