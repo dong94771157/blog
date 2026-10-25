@@ -7,6 +7,9 @@ export interface DownloadItem {
   platform: string; // 平台（如 "Windows" / "macOS" / "Android"）
   version: string; // 版本号
   note: string; // 备注（如 "含激活教程"）
+  // 付费下载
+  paid: boolean; // 是否付费下载
+  price: number; // 下载价格（元，paid 为 true 时生效）
 }
 
 // ===== 文章类型 =====
@@ -77,6 +80,9 @@ export interface Purchase {
   postTitle: string;
   amount: number;
   createdAt: number;
+  // 下载项购买（文章整体购买时为空）
+  downloadId?: string;
+  downloadName?: string;
 }
 
 // ===== KV 存储接口 =====

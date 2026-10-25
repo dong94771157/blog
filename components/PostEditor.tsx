@@ -99,11 +99,11 @@ export default function PostEditor({ post }: PostEditorProps) {
   function addDownload() {
     setDownloads((prev) => [
       ...prev,
-      { id: genId(), name: "", url: "", size: "", platform: "Windows", version: "", note: "" },
+      { id: genId(), name: "", url: "", size: "", platform: "Windows", version: "", note: "", paid: false, price: 0 },
     ]);
   }
 
-  function updateDownload(id: string, field: keyof DownloadItem, value: string) {
+  function updateDownload(id: string, field: keyof DownloadItem, value: string | number | boolean) {
     setDownloads((prev) =>
       prev.map((d) => (d.id === id ? { ...d, [field]: value } : d))
     );
@@ -426,6 +426,37 @@ export default function PostEditor({ post }: PostEditorProps) {
                   className="w-full border border-pink-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 bg-white/80"
                   placeholder="备注（如：含激活教程 / 免安装绿色版）"
                 />
+                {/* 付费下载设置 */}
+                <div className="border border-amber-100 rounded-lg p-2.5 bg-amber-50/40 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-medium text-amber-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={d.paid}
+                      onChange={(e) => {
+                        updateDownload(d.id, "paid", e.target.checked);
+                        if (!e.target.checked) updateDownload(d.id, "price", 0);
+                      }}
+                      className="rounded accent-amber-500"
+                    />
+                    🔒 付费下载（读者购买后可下载）
+                  </label>
+                  {d.paid && (
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-amber-600 font-medium whitespace-nowrap">
+                        价格（元）
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={d.price || ""}
+                        onChange={(e) => updateDownload(d.id, "price", Number(e.target.value))}
+                        className="w-28 border border-amber-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white/80"
+                        placeholder="如 5"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -4,19 +4,48 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
-const NAV_ITEMS = [
-  { href: "/admin/dashboard", label: "仪表板", icon: "📊" },
-  { href: "/admin", label: "文章管理", icon: "📝", exact: true },
-  { href: "/admin/posts/new", label: "新建文章", icon: "✏️" },
-  { href: "/admin/categories", label: "分类管理", icon: "🏷️" },
-  { href: "/admin/users", label: "用户管理", icon: "👥" },
-  { href: "/admin/orders", label: "订单管理", icon: "💰" },
-  { href: "/admin/payment", label: "支付配置", icon: "💳" },
-  { href: "/admin/comments", label: "留言管理", icon: "💬" },
-  { href: "/admin/friends", label: "友链管理", icon: "🔗" },
-  { href: "/admin/products", label: "产品推荐", icon: "✨" },
-  { href: "/admin/notify", label: "通知管理", icon: "🔔" },
-  { href: "/admin/settings", label: "系统设置", icon: "⚙️" },
+// 分组导航配置
+const NAV_GROUPS: {
+  title: string;
+  items: { href: string; label: string; icon: string; exact?: boolean }[];
+}[] = [
+  {
+    title: "概览",
+    items: [
+      { href: "/admin/dashboard", label: "仪表板", icon: "📊" },
+    ],
+  },
+  {
+    title: "内容管理",
+    items: [
+      { href: "/admin", label: "文章管理", icon: "📝", exact: true },
+      { href: "/admin/posts/new", label: "新建文章", icon: "✏️" },
+      { href: "/admin/categories", label: "分类管理", icon: "🏷️" },
+    ],
+  },
+  {
+    title: "用户与交易",
+    items: [
+      { href: "/admin/users", label: "用户管理", icon: "👥" },
+      { href: "/admin/orders", label: "订单管理", icon: "💰" },
+      { href: "/admin/payment", label: "支付配置", icon: "💳" },
+    ],
+  },
+  {
+    title: "互动与扩展",
+    items: [
+      { href: "/admin/comments", label: "留言管理", icon: "💬" },
+      { href: "/admin/friends", label: "友链管理", icon: "🔗" },
+      { href: "/admin/products", label: "产品推荐", icon: "✨" },
+      { href: "/admin/notify", label: "通知管理", icon: "🔔" },
+    ],
+  },
+  {
+    title: "系统",
+    items: [
+      { href: "/admin/settings", label: "系统设置", icon: "⚙️" },
+    ],
+  },
 ];
 
 export default function AdminLayout({
@@ -47,8 +76,9 @@ export default function AdminLayout({
 
   if (authed === null) {
     return (
-      <div className="flex items-center justify-center py-32 text-pink-300">
-        <span className="text-lg">验证登录状态...</span>
+      <div className="flex flex-col items-center justify-center py-32 gap-3">
+        <span className="w-8 h-8 border-3 border-pink-200 border-t-pink-500 rounded-full animate-spin" />
+        <span className="text-pink-400 text-sm">验证登录状态...</span>
       </div>
     );
   }
@@ -61,7 +91,6 @@ export default function AdminLayout({
 
   function isActive(href: string, exact?: boolean) {
     if (exact) return pathname === href;
-    // /admin 需要精确匹配，其他前缀匹配
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   }
@@ -71,54 +100,74 @@ export default function AdminLayout({
       {/* 移动端遮罩 */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed lg:sticky top-0 lg:top-[57px] left-0 z-50 h-full lg:h-[calc(100vh-57px)] w-60 bg-gradient-to-b from-pink-500 via-pink-400 to-purple-400 transform transition-transform duration-300 ${
+        className={`fixed lg:sticky top-0 lg:top-[57px] left-0 z-50 h-full lg:h-[calc(100vh-57px)] w-64 bg-gradient-to-b from-pink-500 via-pink-400 to-purple-500 transform transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="p-5 flex flex-col h-full">
-          <div className="text-white font-bold text-lg mb-6 px-2">
-            ✿ 后台管理
+        <div className="p-4 flex flex-col h-full overflow-y-auto">
+          {/* 品牌区 */}
+          <div className="flex items-center gap-3 px-2 py-3 mb-4 rounded-2xl bg-white/10 backdrop-blur-sm">
+            <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center text-xl shadow-inner">
+              ✿
+            </div>
+            <div>
+              <div className="text-white font-bold text-base leading-tight">
+                后台管理
+              </div>
+              <div className="text-white/60 text-[11px]">二次元博客系统</div>
+            </div>
           </div>
 
-          <nav className="flex-1 space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const active = isActive(item.href, item.exact);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    active
-                      ? "bg-white/90 text-pink-600 shadow-md"
-                      : "text-white/80 hover:bg-white/20 hover:text-white"
-                  }`}
-                >
-                  <span className="text-base">{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
+          {/* 分组导航 */}
+          <nav className="flex-1 space-y-4">
+            {NAV_GROUPS.map((group) => (
+              <div key={group.title}>
+                <div className="px-3 mb-1.5 text-[11px] font-semibold text-white/50 uppercase tracking-wider">
+                  {group.title}
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isActive(item.href, item.exact);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                          active
+                            ? "bg-white text-pink-600 shadow-md"
+                            : "text-white/80 hover:bg-white/15 hover:text-white"
+                        }`}
+                      >
+                        <span className="text-base">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
-          <div className="border-t border-white/20 pt-4 mt-4 space-y-2">
+          {/* 底部操作 */}
+          <div className="border-t border-white/20 pt-3 mt-4 space-y-0.5">
             <Link
               href="/"
               target="_blank"
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/20 hover:text-white transition-all"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-white/15 hover:text-white transition-all"
             >
               <span>🏠</span> 访问前台
             </Link>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-red-400/40 hover:text-white transition-all"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/70 hover:bg-red-400/40 hover:text-white transition-all"
             >
               <span>🚪</span> 退出登录
             </button>
@@ -131,7 +180,7 @@ export default function AdminLayout({
         {/* 移动端菜单按钮 */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="lg:hidden mb-4 px-3 py-2 rounded-lg bg-white/80 border border-pink-200 text-pink-600 text-sm"
+          className="lg:hidden mb-4 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/80 border border-pink-200 text-pink-600 text-sm font-medium shadow-sm"
         >
           ☰ 菜单
         </button>

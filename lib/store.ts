@@ -386,7 +386,11 @@ export async function createPurchase(input: Omit<Purchase, "id" | "createdAt">):
   const id = generateId();
   const purchase: Purchase = { ...input, id, createdAt: Date.now() };
   await kv.put(`${PURCHASE_PREFIX}${id}`, JSON.stringify(purchase));
-  await kv.put(`${PURCHASE_USER_POST_PREFIX}${input.userId}:${input.postId}`, id);
+  // 文章购买索引：userId:postId；下载项购买索引：userId:postId:downloadId
+  const indexKey = input.downloadId
+    ? `${PURCHASE_USER_POST_PREFIX}${input.userId}:${input.postId}:${input.downloadId}`
+    : `${PURCHASE_USER_POST_PREFIX}${input.userId}:${input.postId}`;
+  await kv.put(indexKey, id);
   return purchase;
 }
 
@@ -395,6 +399,43 @@ export async function hasPurchased(userId: string, postId: string): Promise<bool
   const kv = getKV();
   const id = await kv.get(`${PURCHASE_USER_POST_PREFIX}${userId}:${postId}`);
   return !!id;
+}
+
+/** 检查用户是否已购买某下载项 */
+export async function hasPurchasedDownload(
+  userId: string,
+  postId: string,
+  downloadId: string
+): Promise<boolean> {
+  const kv = getKV();
+  const id = await kv.get(
+    `${PURCHASE_USER_POST_PREFIX}${userId}:${postId}:${downloadId}`
+  );
+  return !!id;
+}
+
+/** 获取用户在某文章下已购买的所有下载项 ID */
+export async function getPurchasedDownloadIds(
+  userId: string,
+  postId: string
+): Promise<string[]> {
+  const kv = getKV();
+  const result = await kv.list({ prefix: `${PURCHASE_PREFIX}`, limit: 256 });
+  const ids: string[] = [];
+  for (const { key } of result.keys) {
+    const raw = await kv.get(key);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as Purchase;
+        if (p.userId === userId && p.postId === postId && p.downloadId) {
+          ids.push(p.downloadId);
+        }
+      } catch {
+        // 跳过
+      }
+    }
+  }
+  return ids;
 }
 
 /** 获取用户所有购买记录 */
