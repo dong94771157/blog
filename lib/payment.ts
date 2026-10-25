@@ -1,5 +1,6 @@
 import { PaymentSettings, Order } from "./types";
 import { getPaymentSettings, createOrder, getOrder, updateOrder } from "./settings";
+import { getUserById, updateUser } from "./store";
 
 // ---- 工具函数 ----
 function generateTradeNo(): string {
@@ -136,16 +137,24 @@ async function rsaSign(data: string, privateKeyPem: string): Promise<string> {
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 }
 
+// 订单附加选项
+export interface OrderOptions {
+  type?: "donate" | "recharge";
+  userId?: string | null;
+}
+
 // ---- 易支付 ----
 export async function createEpayOrder(
   amount: number,
   message: string,
-  origin: string
+  origin: string,
+  options?: OrderOptions
 ): Promise<{ payUrl: string; outTradeNo: string }> {
   const settings = await getPaymentSettings();
   const { apiUrl, pid, key } = settings.epay;
   if (!apiUrl || !pid || !key) throw new Error("易支付配置不完整");
 
+  const orderType = options?.type || "donate";
   const outTradeNo = generateTradeNo();
   const params: Record<string, string> = {
     pid,
@@ -153,7 +162,7 @@ export async function createEpayOrder(
     out_trade_no: outTradeNo,
     notify_url: `${origin}/api/payment/notify/epay`,
     return_url: `${origin}/api/payment/return`,
-    name: `博客赞赏 ¥${amount}`,
+    name: orderType === "recharge" ? `余额充值 ¥${amount}` : `博客赞赏 ¥${amount}`,
     money: amount.toFixed(2),
   };
 
@@ -171,6 +180,8 @@ export async function createEpayOrder(
     amount,
     message,
     status: "pending",
+    type: orderType,
+    userId: options?.userId || null,
     createdAt: Date.now(),
     paidAt: null,
   };
@@ -184,17 +195,19 @@ export async function createEpayOrder(
 export async function createWechatOrder(
   amount: number,
   message: string,
-  origin: string
+  origin: string,
+  options?: OrderOptions
 ): Promise<{ codeUrl: string; outTradeNo: string }> {
   const settings = await getPaymentSettings();
   const { appId, mchId, apiV3Key, serialNo, privateKey } = settings.wechat;
   if (!appId || !mchId || !apiV3Key || !privateKey) throw new Error("微信支付配置不完整");
 
+  const orderType = options?.type || "donate";
   const outTradeNo = generateTradeNo();
   const body = {
     appid: appId,
     mchid: mchId,
-    description: `博客赞赏 ¥${amount}`,
+    description: orderType === "recharge" ? `余额充值 ¥${amount}` : `博客赞赏 ¥${amount}`,
     out_trade_no: outTradeNo,
     notify_url: `${origin}/api/payment/notify/wechat`,
     amount: { total: Math.round(amount * 100), currency: "CNY" },
@@ -224,6 +237,8 @@ export async function createWechatOrder(
     amount,
     message,
     status: "pending",
+    type: orderType,
+    userId: options?.userId || null,
     createdAt: Date.now(),
     paidAt: null,
   };
@@ -236,17 +251,19 @@ export async function createWechatOrder(
 export async function createAlipayOrder(
   amount: number,
   message: string,
-  origin: string
+  origin: string,
+  options?: OrderOptions
 ): Promise<{ qrCode: string; outTradeNo: string }> {
   const settings = await getPaymentSettings();
   const { appId, privateKey } = settings.alipay;
   if (!appId || !privateKey) throw new Error("支付宝配置不完整");
 
+  const orderType = options?.type || "donate";
   const outTradeNo = generateTradeNo();
   const bizContent = JSON.stringify({
     out_trade_no: outTradeNo,
     total_amount: amount.toFixed(2),
-    subject: `博客赞赏 ¥${amount}`,
+    subject: orderType === "recharge" ? `余额充值 ¥${amount}` : `博客赞赏 ¥${amount}`,
     body: message || "博客赞赏",
   });
 
@@ -282,6 +299,8 @@ export async function createAlipayOrder(
     amount,
     message,
     status: "pending",
+    type: orderType,
+    userId: options?.userId || null,
     createdAt: Date.now(),
     paidAt: null,
   };
@@ -305,7 +324,21 @@ export async function verifyEpayNotify(params: Record<string, string>): Promise<
 }
 
 export async function markOrderPaid(outTradeNo: string): Promise<Order | null> {
-  return updateOrder(outTradeNo, { status: "paid", paidAt: Date.now() });
+  const existing = await getOrder(outTradeNo);
+  if (!existing || existing.status === "paid") return existing;
+
+  const order = await updateOrder(outTradeNo, { status: "paid", paidAt: Date.now() });
+  if (!order) return null;
+
+  // 充值订单：给用户加余额
+  if (order.type === "recharge" && order.userId) {
+    const user = await getUserById(order.userId);
+    if (user) {
+      await updateUser(user.id, { balance: user.balance + order.amount });
+    }
+  }
+
+  return order;
 }
 
 // RSA-SHA256 验签（用于支付宝回调）

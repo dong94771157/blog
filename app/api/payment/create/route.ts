@@ -17,14 +17,15 @@ export async function POST(request: NextRequest) {
     }
 
     const origin = request.nextUrl.origin;
+    const options = { type: "donate" as const, userId: null };
 
     switch (channel) {
       case "epay": {
-        const result = await createEpayOrder(amount, message || "", origin);
+        const result = await createEpayOrder(amount, message || "", origin, options);
         return NextResponse.json({ type: "redirect", ...result });
       }
       case "wechat": {
-        const result = await createWechatOrder(amount, message || "", origin);
+        const result = await createWechatOrder(amount, message || "", origin, options);
         const QRCode = (await import("qrcode")).default;
         const qrDataUrl = await QRCode.toDataURL(result.codeUrl, {
           margin: 1,
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ type: "qrcode", qrDataUrl, outTradeNo: result.outTradeNo });
       }
       case "alipay": {
-        const result = await createAlipayOrder(amount, message || "", origin);
+        const result = await createAlipayOrder(amount, message || "", origin, options);
         const QRCode = (await import("qrcode")).default;
         const qrDataUrl = await QRCode.toDataURL(result.qrCode, {
           margin: 1,

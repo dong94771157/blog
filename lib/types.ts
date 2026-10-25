@@ -222,6 +222,8 @@ export interface Order {
   amount: number;
   message: string;
   status: "pending" | "paid" | "failed";
+  type: "donate" | "recharge"; // 订单类型：赞赏 / 充值
+  userId: string | null; // 充值订单关联的用户
   createdAt: number;
   paidAt: number | null;
 }

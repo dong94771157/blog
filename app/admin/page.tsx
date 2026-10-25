@@ -55,49 +55,64 @@ export default function AdminHomePage() {
   }
 
   if (loading) {
-    return <div className="text-center py-20 text-gray-400">加载中...</div>;
+    return (
+      <div className="text-center py-20 text-pink-300 text-lg">加载中...</div>
+    );
   }
+
+  const publishedCount = posts.filter((p) => p.published).length;
+  const paidCount = posts.filter((p) => p.paid).length;
 
   return (
     <div>
+      {/* 页头 */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">文章管理</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-pink-600">文章管理</h1>
+          <p className="text-sm text-pink-400 mt-1">
+            共 {posts.length} 篇 · 已发布 {publishedCount} 篇 · 付费 {paidCount} 篇
+          </p>
+        </div>
         <Link
           href="/admin/posts/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-pink-200 hover:shadow-pink-300 hover:from-pink-600 hover:to-purple-600 transition-all"
         >
-          + 新建文章
+          ✏️ 新建文章
         </Link>
       </div>
 
       {posts.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-lg">还没有文章</p>
+        <div className="text-center py-20 bg-white/60 rounded-3xl border border-pink-100">
+          <div className="text-5xl mb-4">📝</div>
+          <p className="text-lg text-pink-400">还没有文章</p>
           <Link
             href="/admin/posts/new"
-            className="mt-4 inline-block text-blue-600 hover:text-blue-800 underline"
+            className="mt-4 inline-block text-pink-500 hover:text-pink-600 underline"
           >
             写第一篇文章 →
           </Link>
         </div>
       ) : (
-        <div className="bg-white border rounded-xl overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-sm border border-pink-100 rounded-2xl overflow-hidden shadow-lg shadow-pink-100">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-pink-50/80 border-b border-pink-100">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">标题</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 w-28">状态</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 w-44">创建时间</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600 w-48">操作</th>
+                <th className="text-left px-5 py-3.5 font-semibold text-pink-600">标题</th>
+                <th className="text-left px-4 py-3.5 font-semibold text-pink-600 w-24">状态</th>
+                <th className="text-left px-4 py-3.5 font-semibold text-pink-600 w-44">创建时间</th>
+                <th className="text-left px-4 py-3.5 font-semibold text-pink-600 w-48">操作</th>
               </tr>
             </thead>
             <tbody>
               {posts.map((post) => (
-                <tr key={post.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                <tr
+                  key={post.id}
+                  className="border-b border-pink-50 last:border-0 hover:bg-pink-50/50 transition-colors"
+                >
+                  <td className="px-5 py-3.5">
                     <Link
                       href={`/posts/${post.slug}`}
-                      className="text-gray-900 hover:text-blue-600 font-medium"
+                      className="text-gray-800 hover:text-pink-600 font-medium transition-colors"
                       target="_blank"
                     >
                       {post.title}
@@ -105,41 +120,43 @@ export default function AdminHomePage() {
                     <div className="text-xs text-gray-400 mt-0.5">
                       /{post.slug}
                       {post.paid && (
-                        <span className="ml-2 text-amber-600">🔒 ¥{post.price}</span>
+                        <span className="ml-2 inline-block bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full text-xs">
+                          🔒 ¥{post.price}
+                        </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     {post.published ? (
-                      <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded-full text-xs">
-                        已发布
+                      <span className="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-xs font-medium">
+                        ● 已发布
                       </span>
                     ) : (
-                      <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs">
-                        草稿
+                      <span className="bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full text-xs font-medium">
+                        ○ 草稿
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">
+                  <td className="px-4 py-3.5 text-gray-400 text-xs">
                     {new Date(post.createdAt).toLocaleString("zh-CN")}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <div className="flex gap-3 text-xs">
                       <Link
                         href={`/admin/posts/${post.id}`}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-pink-500 hover:text-pink-700 font-medium"
                       >
                         编辑
                       </Link>
                       <button
                         onClick={() => handleTogglePublish(post)}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-purple-400 hover:text-purple-600 font-medium"
                       >
-                        {post.published ? "转为草稿" : "发布"}
+                        {post.published ? "转草稿" : "发布"}
                       </button>
                       <button
                         onClick={() => handleDelete(post.id, post.title)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-400 hover:text-red-600 font-medium"
                       >
                         删除
                       </button>

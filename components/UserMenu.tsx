@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import RechargeModal from "./RechargeModal";
 
 interface UserInfo {
   id: string;
@@ -29,6 +30,7 @@ export default function UserMenu() {
   const [error, setError] = useState("");
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [showPurchases, setShowPurchases] = useState(false);
+  const [showRecharge, setShowRecharge] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,6 +95,12 @@ export default function UserMenu() {
     const data = await res.json();
     if (data.purchases) setPurchases(data.purchases);
     setShowPurchases(true);
+  }
+
+  async function refreshUser() {
+    const res = await fetch("/api/user/me");
+    const data = await res.json();
+    if (data.user) setUser(data.user);
   }
 
   // 登录/注册弹窗
@@ -258,6 +266,15 @@ export default function UserMenu() {
             我的购买
           </button>
           <button
+            onClick={() => {
+              setShowRecharge(true);
+              setOpen(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm text-pink-600 hover:bg-pink-50 font-medium"
+          >
+            💳 余额充值
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50"
           >
@@ -265,6 +282,12 @@ export default function UserMenu() {
           </button>
         </div>
       )}
+
+      <RechargeModal
+        open={showRecharge}
+        onClose={() => setShowRecharge(false)}
+        onSuccess={refreshUser}
+      />
     </div>
   );
 }

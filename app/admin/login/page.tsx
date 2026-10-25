@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
       });
 
       if (res.ok) {
-        router.push("/admin");
+        router.push("/admin/dashboard");
         router.refresh();
       } else {
         const data = await res.json();
@@ -37,51 +37,68 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-20">
-      <h1 className="text-2xl font-bold text-center mb-8">后台登录</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white border rounded-xl p-6 space-y-4"
-      >
-        {error && (
-          <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded">
-            {error}
+    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-sm">
+        {/* Logo 标题 */}
+        <div className="text-center mb-8">
+          <div className="inline-block w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-pink-200">
+            ✿
           </div>
-        )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            用户名
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="admin"
-            required
-          />
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+            后台管理
+          </h1>
+          <p className="text-pink-400 text-sm mt-2">欢迎回来，请登录继续</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            密码
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="••••••••"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
+
+        {/* 登录卡片 */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-3xl p-8 space-y-5 shadow-xl shadow-pink-100"
         >
-          {loading ? "登录中..." : "登录"}
-        </button>
-      </form>
+          {error && (
+            <div className="bg-red-50 text-red-500 text-sm px-4 py-2.5 rounded-xl border border-red-100">
+              ⚠️ {error}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-pink-600 mb-1.5">
+              用户名
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full border border-pink-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-white/70 placeholder:text-pink-200 transition-all"
+              placeholder="admin"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-pink-600 mb-1.5">
+              密码
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-pink-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-white/70 placeholder:text-pink-200 transition-all"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl py-3 font-semibold hover:from-pink-600 hover:to-purple-600 disabled:opacity-50 transition-all shadow-lg shadow-pink-200 hover:shadow-pink-300"
+          >
+            {loading ? "登录中..." : "登录 ✨"}
+          </button>
+        </form>
+
+        <p className="text-center text-xs text-pink-300 mt-6">
+          ✿ 二次元博客管理系统 ✿
+        </p>
+      </div>
     </div>
   );
 }
