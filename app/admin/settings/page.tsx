@@ -336,6 +336,7 @@ function AIForm({
 
   const PROVIDERS: { value: string; label: string }[] = [
     { value: "openai", label: "OpenAI" },
+    { value: "edgeone", label: "EdgeOne AI（腾讯云边缘网关）" },
     { value: "deepseek", label: "DeepSeek（深度求索）" },
     { value: "qwen", label: "通义千问（阿里）" },
     { value: "zhipu", label: "智谱清言（GLM）" },
@@ -347,6 +348,7 @@ function AIForm({
 
   const PRESET_URLS: Record<string, string> = {
     openai: "https://api.openai.com/v1",
+    edgeone: "https://ai-gateway.edgeone.link/v1",
     deepseek: "https://api.deepseek.com/v1",
     qwen: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     zhipu: "https://open.bigmodel.cn/api/paas/v4",
@@ -404,8 +406,17 @@ function AIForm({
                   className={inputCls}
                   value={ai.model}
                   onChange={(e) => update("model", e.target.value)}
-                  placeholder="如 gpt-4o-mini / deepseek-chat"
+                  placeholder={
+                    ai.provider === "edgeone"
+                      ? "如 @makers/deepseek-v4-flash"
+                      : "如 gpt-4o-mini / deepseek-chat"
+                  }
                 />
+                {ai.provider === "edgeone" && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    EdgeOne 内置模型以 @makers/ 开头，可用模型见 EdgeOne 控制台 → Makers → Models
+                  </p>
+                )}
               </div>
             </div>
             <div>
@@ -426,6 +437,11 @@ function AIForm({
                 onChange={(e) => update("apiKey", e.target.value)}
                 placeholder="sk-..."
               />
+              {ai.provider === "edgeone" && (
+                <p className="text-xs text-gray-400 mt-1">
+                  💡 留空可自动使用 EdgeOne 运行时注入的环境变量 AI_GATEWAY_API_KEY（或在控制台创建的 MAKERS_MODELS_KEY）
+                </p>
+              )}
             </div>
             <div>
               <label className={labelCls}>客服人设提示词（System Prompt）</label>

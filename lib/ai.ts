@@ -17,6 +17,19 @@ export const AI_PROVIDER_PRESETS: Record<
     models: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "o4-mini"],
     label: "OpenAI",
   },
+  edgeone: {
+    // EdgeOne Makers AI 网关（OpenAI 协议兼容）
+    // Key 来源（按优先级）：后台填写的 Key > 环境变量 AI_GATEWAY_API_KEY > MAKERS_MODELS_KEY
+    // 模型 ID 以 @makers/ 开头，可在 EdgeOne 控制台 Makers/Models 查看可用模型
+    apiUrl: "https://ai-gateway.edgeone.link/v1",
+    models: [
+      "@makers/deepseek-v4-flash",
+      "@makers/kimi-k2.6",
+      "@makers/glm-4.6",
+      "@makers/qwen3-max",
+    ],
+    label: "EdgeOne AI（腾讯云边缘网关）",
+  },
   deepseek: {
     apiUrl: "https://api.deepseek.com/v1",
     models: ["deepseek-chat", "deepseek-reasoner"],
@@ -59,20 +72,40 @@ export const AI_PROVIDER_PRESETS: Record<
 };
 
 /**
+ * 解析实际使用的 API Key
+ * 优先级：后台填写的 Key > 环境变量 AI_GATEWAY_API_KEY（EdgeOne Makers 自动注入）> MAKERS_MODELS_KEY
+ */
+export function resolveApiKey(settings: AISettings): string {
+  if (settings.apiKey) return settings.apiKey;
+  return (
+    process.env.AI_GATEWAY_API_KEY ||
+    process.env.MAKERS_MODELS_KEY ||
+    ""
+  );
+}
+
+/**
  * 调用 OpenAI 兼容的 Chat Completions 接口
- * 兼容 OpenAI / DeepSeek / 通义千问 / 智谱 / Kimi / SiliconFlow / Ollama 等
+ * 兼容 OpenAI / EdgeOne AI / DeepSeek / 通义千问 / 智谱 / Kimi / SiliconFlow / Ollama 等
  */
 export async function chatCompletion(
   settings: AISettings,
   messages: ChatMessage[]
 ): Promise<string> {
+  const apiKey = resolveApiKey(settings);
+  if (!apiKey) {
+    throw new Error(
+      "AI Key 未配置：请在后台填写 API Key，或在 EdgeOne 控制台配置环境变量 AI_GATEWAY_API_KEY"
+    );
+  }
+
   const url = `${settings.apiUrl.replace(/\/$/, "")}/chat/completions`;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${settings.apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: settings.model,
@@ -141,7 +174,11 @@ export async function moderateContent(
   const settings = await getAISettings();
 
   // AI 审核模式
-  if (settings.moderationEnabled && settings.enabled && settings.apiKey) {
+  if (
+    settings.moderationEnabled &&
+    settings.enabled &&
+    resolveApiKey(settings)
+  ) {
     try {
       const messages: ChatMessage[] = [
         { role: "system", content: settings.moderationPrompt },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { aiChat, type ChatMessage } from "@/lib/ai";
+import { aiChat, resolveApiKey, type ChatMessage } from "@/lib/ai";
 import { getAISettings, getSiteSettings } from "@/lib/settings";
 
 // AI 客服对话接口
@@ -7,7 +7,7 @@ import { getAISettings, getSiteSettings } from "@/lib/settings";
 export async function GET() {
   const settings = await getAISettings();
   return NextResponse.json({
-    enabled: settings.enabled && Boolean(settings.apiKey),
+    enabled: settings.enabled && Boolean(resolveApiKey(settings)),
   });
 }
 
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!settings.apiKey) {
+  if (!resolveApiKey(settings)) {
     return NextResponse.json(
       { error: "AI 接口未配置，请联系站长" },
       { status: 503 }

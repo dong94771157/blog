@@ -286,7 +286,7 @@ export interface Order {
 // ===== AI 配置 =====
 export interface AISettings {
   enabled: boolean; // AI 客服总开关
-  provider: "openai" | "deepseek" | "qwen" | "zhipu" | "moonshot" | "siliconflow" | "ollama" | "custom";
+  provider: "openai" | "edgeone" | "deepseek" | "qwen" | "zhipu" | "moonshot" | "siliconflow" | "ollama" | "custom";
   apiUrl: string; // API 基础地址（如 https://api.openai.com/v1）
   apiKey: string;
   model: string; // 模型名（如 gpt-4o-mini / deepseek-chat）
