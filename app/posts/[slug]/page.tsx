@@ -11,7 +11,6 @@ import {
 import { getPaymentSettings } from "@/lib/settings";
 import { verifyToken } from "@/lib/auth";
 import { marked } from "marked";
-import DonateCard from "@/components/DonateCard";
 import PaywallCard from "@/components/PaywallCard";
 import DownloadBuyButton from "@/components/DownloadBuyButton";
 import Comments from "@/components/Comments";
@@ -92,10 +91,6 @@ export default async function PostPage({
   }
 
   const payment = await getPaymentSettings();
-  // 文章底部赞赏卡片：只要配置了收款码就默认展示（不受开关影响，开关仅控制赞赏页与首页侧边栏）
-  // 付费文章未解锁时（needPaywall）不显示
-  const showDonate =
-    !needPaywall && !!(payment.donate.wechatQr || payment.donate.alipayQr);
 
   return (
     <article className="max-w-3xl mx-auto">
@@ -244,17 +239,7 @@ export default async function PostPage({
         />
       )}
 
-      {showDonate && (
-        <div className="mt-10">
-          <DonateCard
-            title={payment.donate.title}
-            desc={payment.donate.desc}
-            wechatQr={payment.donate.wechatQr}
-            alipayQr={payment.donate.alipayQr}
-            variant="full"
-          />
-        </div>
-      )}
+      {/* 文章底部赞赏卡片已由全站 DonateBanner 统一插入（app/layout.tsx） */}
 
       <Comments
         postId={post.id}

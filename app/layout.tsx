@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { getSiteSettings } from "@/lib/settings";
 import LayoutShell from "@/components/LayoutShell";
+import DonateBanner from "@/components/DonateBanner";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteSettings();
@@ -34,6 +35,7 @@ export default async function RootLayout({
             icp: site.icp,
             contact: site.contact,
           }}
+          donate={<DonateBanner />}
         >
           {children}
         </LayoutShell>

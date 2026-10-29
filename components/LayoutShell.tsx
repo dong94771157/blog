@@ -19,6 +19,8 @@ interface ContactInfo {
 
 interface LayoutShellProps {
   children: React.ReactNode;
+  /** 全站赞赏卡片（服务端组件），后台与 /donate 页自动跳过 */
+  donate?: React.ReactNode;
   site: {
     siteName: string;
     logoUrl: string;
@@ -29,7 +31,7 @@ interface LayoutShellProps {
   };
 }
 
-export default function LayoutShell({ children, site }: LayoutShellProps) {
+export default function LayoutShell({ children, donate, site }: LayoutShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isAdmin = pathname?.startsWith("/admin");
@@ -231,6 +233,8 @@ export default function LayoutShell({ children, site }: LayoutShellProps) {
         </button>
         <main className="px-4 sm:px-6 lg:px-10 py-8 min-h-screen">
           {children}
+          {/* 全站赞赏卡片：/donate 页自身已有大卡片，跳过避免重复 */}
+          {pathname !== "/donate" && donate}
         </main>
       </div>
 
