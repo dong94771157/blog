@@ -12,6 +12,8 @@ import {
   getAdminSettings,
   saveAdminSettings,
   getAdminCredentials,
+  getMusicSettings,
+  saveMusicSettings,
 } from "@/lib/settings";
 
 // 获取设置（type 参数区分：site / notify / payment）
@@ -30,6 +32,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ settings: await getPaymentSettings() });
     case "ai":
       return NextResponse.json({ settings: await getAISettings() });
+    case "music":
+      return NextResponse.json({ settings: await getMusicSettings() });
     case "admin": {
       const [settings, cred] = await Promise.all([
         getAdminSettings(),
@@ -70,6 +74,8 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ settings: await saveAISettings(settings) });
       case "admin":
         return NextResponse.json({ settings: await saveAdminSettings(settings) });
+      case "music":
+        return NextResponse.json({ settings: await saveMusicSettings(settings) });
       default:
         return NextResponse.json({ error: "未知设置类型" }, { status: 400 });
     }

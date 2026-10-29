@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { SiteSettings, AISettings, AdminSettings } from "@/lib/types";
+import type { SiteSettings, AISettings, AdminSettings, MusicSettings } from "@/lib/types";
 
-type Tab = "site" | "ai" | "admin";
+type Tab = "site" | "ai" | "admin" | "music";
 
 const inputCls =
   "w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400";
@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [site, setSite] = useState<SiteSettings | null>(null);
   const [ai, setAi] = useState<AISettings | null>(null);
   const [admin, setAdmin] = useState<AdminSettings | null>(null);
+  const [music, setMusic] = useState<MusicSettings | null>(null);
   const [adminUsername, setAdminUsername] = useState("admin");
   const [hasCustomCred, setHasCustomCred] = useState(false);
   const [credUpdatedAt, setCredUpdatedAt] = useState(0);
@@ -32,6 +33,8 @@ export default function SettingsPage() {
       setSite(s.settings);
       setAi(a.settings);
       setAdmin(ad.settings);
+      const mu = await fetch("/api/settings?type=music").then((r) => r.json());
+      setMusic(mu.settings);
       setAdminUsername(ad.adminUsername || "admin");
       setHasCustomCred(!!ad.hasCustomCred);
       setCredUpdatedAt(ad.credUpdatedAt || 0);
@@ -67,7 +70,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (!site || !ai || !admin) {
+  if (!site || !ai || !admin || !music) {
     return <div className="text-center py-20 text-pink-300 text-lg">加载中...</div>;
   }
 
@@ -774,6 +777,149 @@ function AdminForm({
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+// ---- 音乐配置表单 ----
+function MusicForm({
+  music,
+  setMusic,
+  save,
+  saving,
+}: {
+  music: MusicSettings;
+  setMusic: (m: MusicSettings) => void;
+  save: (type: Tab, data: unknown) => void;
+  saving: boolean;
+}) {
+  function update<K extends keyof MusicSettings>(key: K, value: MusicSettings[K]) {
+    setMusic({ ...music, [key]: value });
+  }
+  function updateNetease(key: keyof MusicSettings["netease"], value: string | number) {
+    setMusic({ ...music, netease: { ...music.netease, [key]: value } });
+  }
+  function updateCustom(key: keyof MusicSettings["custom"], value: string) {
+    setMusic({ ...music, custom: { ...music.custom, [key]: value } });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🎵</span>
+            <h3 className="font-medium text-gray-800">音乐源</h3>
+          </div>
+          <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-pink-500"
+              checked={music.enabled}
+              onChange={(e) => update("enabled", e.target.checked)}
+            />
+            启用播放器
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>音乐源</label>
+            <select
+              className={inputCls}
+              value={music.source}
+              onChange={(e) => update("source", e.target.value as MusicSettings["source"])}
+            >
+              <option value="netease">网易云音乐（默认）</option>
+              <option value="custom">自定义接口</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>显示名称</label>
+            <input
+              className={inputCls}
+              value={music.label}
+              onChange={(e) => update("label", e.target.value)}
+              placeholder="在线音乐 · 网易云"
+            />
+            <p className="text-xs text-gray-400 mt-1">显示在播放器条与歌曲列表标题</p>
+          </div>
+        </div>
+      </div>
+
+      {music.source === "netease" && (
+        <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xl">🔍</span>
+            <h3 className="font-medium text-gray-800">网易云参数</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>搜索关键词</label>
+              <input
+                className={inputCls}
+                value={music.netease.keyword}
+                onChange={(e) => updateNetease("keyword", e.target.value)}
+                placeholder="伤感"
+              />
+              <p className="text-xs text-gray-400 mt-1">用于搜索网易云歌曲，留空显示「在线音乐 · 网易云」</p>
+            </div>
+            <div>
+              <label className={labelCls}>每批数量</label>
+              <input
+                type="number"
+                min="5"
+                max="100"
+                className={inputCls}
+                value={music.netease.limit}
+                onChange={(e) => updateNetease("limit", Number(e.target.value) || 50)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {music.source === "custom" && (
+        <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-xl">🔌</span>
+            <h3 className="font-medium text-gray-800">自定义接口</h3>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className={labelCls}>歌曲列表接口 URL</label>
+              <input
+                className={inputCls + " font-mono"}
+                value={music.custom.listUrl}
+                onChange={(e) => updateCustom("listUrl", e.target.value)}
+                placeholder="https://api.example.com/songs?genre=sad"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                必须返回 JSON：<code className="bg-pink-50 px-1 rounded">{'{ songs: [{ id, name, artist, album, picUrl, duration }]'}</code>
+                ，或数组 / <code className="bg-pink-50 px-1 rounded">{'{ list: [...]}'}</code>
+              </p>
+            </div>
+            <div>
+              <label className={labelCls}>音频流地址模板</label>
+              <input
+                className={inputCls + " font-mono"}
+                value={music.custom.streamUrl}
+                onChange={(e) => updateCustom("streamUrl", e.target.value)}
+                placeholder="https://music.example.com/{id}.mp3"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                使用 <code className="bg-pink-50 px-1 rounded">{"{id}"}</code> 作为歌曲 id 占位符，浏览器 audio 标签会通过 <code className="bg-pink-50 px-1 rounded">/api/music/stream?id=...</code> 代理该 URL 以绕过 Referer 防盗链
+              </p>
+            </div>
+            <div className="bg-amber-50/60 rounded-lg px-3 py-2 text-xs text-amber-700 border border-amber-100">
+              💡 自定义接口支持：listUrl 返回 JSON（songs / list / 数组）；streamUrl 支持任意 http(s) 地址，由服务端代理转发（支持 Range）
+            </div>
+          </div>
+        </div>
+      )}
+
+      <button onClick={() => save("music", music)} disabled={saving} className={btnCls}>
+        {saving ? "保存中..." : "保存音乐配置"}
+      </button>
     </div>
   );
 }

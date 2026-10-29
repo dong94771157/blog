@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// 网易云音乐 - 伤感歌曲搜索 API
-// 通过服务端请求网易云搜索接口，避免浏览器跨域问题
-
-// 简单内存缓存（避免频繁请求被限流）
-let cache: { keyword: string; response: unknown; ts: number } | null = null;
-const CACHE_TTL = 10 * 60 * 1000; // 10 分钟
+import { getMusicSettings } from "@/lib/settings";
 
 interface SongItem {
-  id: number;
+  id: number | string;
   name: string;
   artist: string;
   album: string;
@@ -16,66 +10,89 @@ interface SongItem {
   duration: number;
 }
 
-export async function GET(request: NextRequest) {
-  const keyword =
-    request.nextUrl.searchParams.get("keyword") || "伤感";
+// 内存缓存（避免频繁请求被限流）
+let cache: { key: string; response: unknown; ts: number } | null = null;
+const CACHE_TTL = 10 * 60 * 1000; // 10 分钟
 
-  // 命中缓存直接返回
-  if (
-    cache &&
-    cache.keyword === keyword &&
-    Date.now() - cache.ts < CACHE_TTL
-  ) {
+const UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+// 网易云音乐搜索
+async function fetchNetease(keyword: string, limit: number): Promise<SongItem[]> {
+  // 随机偏移，让每次取到不同批次的歌曲
+  const offset = Math.floor(Math.random() * 6) * limit;
+  const url = `https://music.163.com/api/search/get?s=${encodeURIComponent(
+    keyword
+  )}&type=1&limit=${limit}&offset=${offset}`;
+
+  const res = await fetch(url, {
+    headers: { "User-Agent": UA, Referer: "https://music.163.com" },
+  });
+  if (!res.ok) throw new Error("网易云接口请求失败");
+  const data = await res.json();
+  const rawSongs = data?.result?.songs || [];
+  return rawSongs.map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    artist: (s.artists || []).map((a: any) => a.name).join(" / "),
+    album: s.album?.name || "",
+    picUrl: (s.album?.picUrl || "").replace("http://", "https://"),
+    duration: s.duration || 0,
+  }));
+}
+
+// 自定义接口：listUrl 需 GET 返回 {songs:[{id,name,artist,album,picUrl,duration}]}
+// 也兼容直接返回数组，或 {list:[...]} 结构
+async function fetchCustom(listUrl: string): Promise<SongItem[]> {
+  const res = await fetch(listUrl, { headers: { "User-Agent": UA } });
+  if (!res.ok) throw new Error("自定义音乐接口请求失败");
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data.songs || data.list || [];
+  return list.map((s: any) => ({
+    id: s.id,
+    name: s.name || s.title || "",
+    artist: s.artist || s.singer || "",
+    album: s.album || s.albumName || "",
+    picUrl: (s.picUrl || s.cover || s.pic || "").replace("http://", "https://"),
+    duration: s.duration || s.length || 0,
+  }));
+}
+
+export async function GET(request: NextRequest) {
+  const music = await getMusicSettings();
+  const keyword =
+    request.nextUrl.searchParams.get("keyword") ||
+    music.netease.keyword ||
+    "伤感";
+
+  const key = `${music.source}:${keyword}:${music.custom.listUrl}`;
+  if (cache && cache.key === key && Date.now() - cache.ts < CACHE_TTL) {
     return NextResponse.json(cache.response);
   }
 
+  let songs: SongItem[];
   try {
-    const limit = 50;
-    // 随机偏移，让每次取到不同批次的歌曲
-    const offset = Math.floor(Math.random() * 6) * limit;
-    const url = `https://music.163.com/api/search/get?s=${encodeURIComponent(
-      keyword
-    )}&type=1&limit=${limit}&offset=${offset}`;
-
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Referer: "https://music.163.com",
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error("网易云接口请求失败");
+    if (music.source === "custom" && music.custom.listUrl) {
+      songs = await fetchCustom(music.custom.listUrl);
+    } else {
+      const limit = music.netease.limit || 50;
+      songs = await fetchNetease(keyword, limit);
     }
-
-    const data = await res.json();
-    const rawSongs = data?.result?.songs || [];
-
-    const songs: SongItem[] = rawSongs.map(
-      (s: {
-        id: number;
-        name: string;
-        artists?: { name: string }[];
-        album?: { name?: string; picUrl?: string };
-        duration?: number;
-      }) => ({
-        id: s.id,
-        name: s.name,
-        artist: (s.artists || []).map((a) => a.name).join(" / "),
-        album: s.album?.name || "",
-        picUrl: (s.album?.picUrl || "").replace("http://", "https://"),
-        duration: s.duration || 0,
-      })
-    );
-
-    const response = { songs, keyword, total: songs.length };
-    cache = { keyword, response, ts: Date.now() };
-    return NextResponse.json(response);
   } catch {
     return NextResponse.json(
       { songs: [], error: "获取歌曲失败，请稍后重试" },
       { status: 500 }
     );
   }
+
+  const response = {
+    songs,
+    keyword,
+    total: songs.length,
+    source: music.source,
+    label: music.label,
+    enabled: music.enabled,
+  };
+  cache = { key, response, ts: Date.now() };
+  return NextResponse.json(response);
 }

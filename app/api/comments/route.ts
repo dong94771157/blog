@@ -60,9 +60,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "留言不能超过 1000 字" }, { status: 400 });
     }
 
-    // 获取文章信息
-    const post = await getPostById(postId);
-    if (!post) {
+    // 获取文章信息（留言板使用固定 ID，无需真实文章）
+    const isGuestbook = postId === "guestbook";
+    const post = isGuestbook ? null : await getPostById(postId);
+    if (!isGuestbook && !post) {
       return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     const comment: Comment = {
       id: genId(),
       postId,
-      postTitle: post.title,
+      postTitle: isGuestbook ? "留言板" : post!.title,
       userId,
       authorName: name,
       content: String(content).trim(),
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         content: [
           `AI 审核发现一条违规留言，已自动拦截。`,
           ``,
-          `文章：${post.title}`,
+          `位置：${isGuestbook ? "留言板" : post!.title}`,
           `昵称：${name}`,
           `内容：${String(content).trim().slice(0, 200)}`,
           `违规类型：${moderation.category}`,

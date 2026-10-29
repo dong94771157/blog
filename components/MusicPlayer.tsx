@@ -28,6 +28,8 @@ export default function MusicPlayer() {
   const [volume, setVolume] = useState(0.6);
   const [expanded, setExpanded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [label, setLabel] = useState("在线音乐 · 网易云");
+  const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [failedIds, setFailedIds] = useState<Set<number>>(new Set());
@@ -43,6 +45,8 @@ export default function MusicPlayer() {
     try {
       const res = await fetch("/api/music");
       const data = await res.json();
+      if (data.label) setLabel(data.label);
+      setEnabled(data.enabled !== false);
       if (data.songs && data.songs.length > 0) {
         setSongs(data.songs);
         setCurrentIdx(0);
@@ -111,8 +115,9 @@ export default function MusicPlayer() {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
-  // 后台管理页不显示播放器（必须在所有 hooks 之后 return）
+  // 后台管理页 / 后台禁用音乐时不显示（必须在所有 hooks 之后 return）
   if (pathname?.startsWith("/admin")) return null;
+  if (!enabled) return null;
 
   function togglePlay() {
     if (!current) return;
@@ -181,7 +186,7 @@ export default function MusicPlayer() {
             setPlaying(true);
           }
         }}
-        title="在线音乐 · 伤感歌单"
+        title={label}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 text-white text-2xl shadow-xl shadow-pink-300/50 hover:shadow-pink-400/60 hover:scale-110 transition-all flex items-center justify-center relative"
       >
         🎵
@@ -213,7 +218,7 @@ export default function MusicPlayer() {
       {panelOpen && (
         <div className="fixed bottom-[92px] right-4 left-4 sm:left-auto sm:w-96 z-50 bg-white/95 backdrop-blur-md rounded-2xl border border-pink-100 shadow-2xl shadow-pink-200/50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-            <span className="font-bold text-sm">🎵 伤感歌曲 · 网易云</span>
+            <span className="font-bold text-sm">🎵 {label}</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={loadSongs}

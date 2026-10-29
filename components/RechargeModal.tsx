@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 
 const PRESET_AMOUNTS = [5, 10, 20, 50, 100];
 
@@ -34,7 +35,11 @@ export default function RechargeModal({
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [error, setError] = useState("");
   const [paid, setPaid] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Portal 需要 DOM 就绪，仅在客户端渲染
+  useEffect(() => setMounted(true), []);
 
   // 打开时获取渠道配置
   useEffect(() => {
@@ -81,7 +86,7 @@ export default function RechargeModal({
     };
   }, [qrDataUrl]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const enabledChannels = [
     channels.epay && { key: "epay", label: CHANNEL_LABEL.epay },
@@ -139,7 +144,7 @@ export default function RechargeModal({
     onSuccess?.();
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={handleClose}
@@ -303,6 +308,7 @@ export default function RechargeModal({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

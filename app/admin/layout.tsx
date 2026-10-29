@@ -38,6 +38,7 @@ const NAV_GROUPS: {
       { href: "/admin/friends", label: "友链管理", icon: "🔗" },
       { href: "/admin/products", label: "产品推荐", icon: "✨" },
       { href: "/admin/notify", label: "通知管理", icon: "🔔" },
+      { href: "/admin/music", label: "音乐接口", icon: "🎵" },
     ],
   },
   {
@@ -86,7 +87,11 @@ export default function AdminLayout({
       .catch(() => router.replace("/admin/login"));
   }, [isLoginPage, router]);
 
-  if (isLoginPage) return <>{children}</>;
+  if (isLoginPage) return (
+    <div className="min-h-screen w-full">
+      {children}
+    </div>
+  );
 
   if (authed === null) {
     return (
@@ -110,7 +115,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-140px)] -mx-4 -my-8">
+    <div className="flex min-h-screen w-full">
       {/* 移动端遮罩 */}
       {sidebarOpen && (
         <div
@@ -121,7 +126,7 @@ export default function AdminLayout({
 
       {/* 侧边栏 */}
       <aside
-        className={`fixed lg:sticky top-0 lg:top-[57px] left-0 z-50 h-full lg:h-[calc(100vh-57px)] w-64 bg-gradient-to-b from-pink-500 via-pink-400 to-purple-500 transform transition-transform duration-300 ${
+        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-gradient-to-b from-[#0d1b2a] via-[#1b263b] to-[#415a77] transform transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >

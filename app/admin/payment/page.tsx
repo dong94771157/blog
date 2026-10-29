@@ -45,6 +45,15 @@ function fileToQrDataUrl(file: File, maxSize = 600): Promise<string> {
   });
 }
 
+/** 外部 http(s) 图片走服务端代理绕过防盗链；data: URL 与站内路径直接引用 */
+function proxiedSrc(src?: string): string | undefined {
+  if (!src) return undefined;
+  if (src.startsWith("data:") || src.startsWith("/")) return src;
+  if (/^https?:\/\//i.test(src))
+    return `/api/image?url=${encodeURIComponent(src)}`;
+  return src;
+}
+
 export default function PaymentPage() {
   const [payment, setPayment] = useState<PaymentSettings | null>(null);
   const [saving, setSaving] = useState(false);
@@ -246,7 +255,7 @@ export default function PaymentPage() {
                     {payment.donate.wechatQr && (
                       <div className="mt-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={payment.donate.wechatQr} alt="微信收款码预览" referrerPolicy="no-referrer" className="w-24 h-24 rounded-lg border border-pink-100 object-contain bg-white" />
+                        <img src={proxiedSrc(payment.donate.wechatQr)} alt="微信收款码预览" referrerPolicy="no-referrer" className="w-24 h-24 rounded-lg border border-pink-100 object-contain bg-white" />
                       </div>
                     )}
                   </div>
@@ -266,7 +275,7 @@ export default function PaymentPage() {
                     {payment.donate.alipayQr && (
                       <div className="mt-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={payment.donate.alipayQr} alt="支付宝收款码预览" referrerPolicy="no-referrer" className="w-24 h-24 rounded-lg border border-pink-100 object-contain bg-white" />
+                        <img src={proxiedSrc(payment.donate.alipayQr)} alt="支付宝收款码预览" referrerPolicy="no-referrer" className="w-24 h-24 rounded-lg border border-pink-100 object-contain bg-white" />
                       </div>
                     )}
                   </div>

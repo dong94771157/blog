@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { getPaymentSettings, getSiteSettings } from "@/lib/settings";
+import { getPaymentSettings, getSiteSettings, getPaidDonateOrders } from "@/lib/settings";
+import { getUserById } from "@/lib/store";
 import DonateCard from "@/components/DonateCard";
+import DonorWall, { type DonorEntry } from "@/components/DonorWall";
 import SadBoyAvatar from "@/components/SadBoyAvatar";
 
 export const revalidate = 60;
@@ -11,12 +13,30 @@ export async function generateMetadata() {
 }
 
 export default async function DonatePage() {
-  const [payment, site] = await Promise.all([
+  const [payment, site, donateOrders] = await Promise.all([
     getPaymentSettings(),
     getSiteSettings(),
+    getPaidDonateOrders(),
   ]);
 
   const donate = payment.donate;
+
+  // 解析赞赏名单
+  const donors: DonorEntry[] = await Promise.all(
+    donateOrders.map(async (o) => {
+      let name = "匿名好心人";
+      if (o.userId) {
+        const user = await getUserById(o.userId);
+        if (user) name = user.username;
+      }
+      return {
+        name,
+        amount: o.amount,
+        message: o.message,
+        time: o.paidAt ?? o.createdAt,
+      };
+    })
+  );
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -77,6 +97,13 @@ export default async function DonatePage() {
             <br />
             <span className="text-pink-300">✿ 感谢你的支持 ✿</span>
           </p>
+        </div>
+      )}
+
+      {/* 赞赏名单 */}
+      {donors.length > 0 && (
+        <div className="mt-8">
+          <DonorWall donors={donors} variant="full" />
         </div>
       )}
     </div>

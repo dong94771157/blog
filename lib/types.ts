@@ -370,6 +370,32 @@ export const defaultAdminSettings: AdminSettings = {
   welcomeText: "",
 };
 
+
+// ===== 音乐配置 =====
+export interface MusicSettings {
+  enabled: boolean; // 播放器开关
+  source: "netease" | "custom"; // 音乐源：网易云 / 自定义接口
+  netease: {
+    keyword: string; // 搜索关键词
+    limit: number; // 每批数量
+  };
+  custom: {
+    // 歌曲列表接口，GET 返回 {songs:[{id,name,artist,album,picUrl,duration}]}
+    listUrl: string;
+    // 音频流地址模板，用 {id} 作为歌曲 id 占位符
+    streamUrl: string;
+  };
+  label: string; // 播放器显示名称（如 "在线音乐 · 网易云"）
+}
+
+export const defaultMusicSettings: MusicSettings = {
+  enabled: true,
+  source: "netease",
+  netease: { keyword: "伤感", limit: 50 },
+  custom: { listUrl: "", streamUrl: "" },
+  label: "在线音乐 · 网易云",
+};
+
 // ===== 管理员凭据（修改密码后存 KV，优先于环境变量） =====
 export interface AdminCredentials {
   username: string; // 管理员用户名

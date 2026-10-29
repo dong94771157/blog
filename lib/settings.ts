@@ -15,6 +15,8 @@ import {
   defaultPaymentSettings,
   defaultAISettings,
   defaultAdminSettings,
+  defaultMusicSettings,
+  type MusicSettings,
 } from "./types";
 
 // KV 键名
@@ -147,6 +149,14 @@ export async function getAllOrders(): Promise<Order[]> {
     }
   }
   return orders.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** 获取已支付的赞赏订单（赞赏名单用，按支付时间倒序） */
+export async function getPaidDonateOrders(): Promise<Order[]> {
+  const orders = await getAllOrders();
+  return orders
+    .filter((o) => o.type === "donate" && o.status === "paid")
+    .sort((a, b) => (b.paidAt ?? b.createdAt) - (a.paidAt ?? a.createdAt));
 }
 
 // ---- AI 配置 ----
@@ -417,3 +427,23 @@ export async function getAllProducts(): Promise<ProductPromo[]> {
 }
 
 export { genId };
+// ---- 音乐配置 ----
+const KEY_MUSIC = "settings:music";
+
+export async function getMusicSettings(): Promise<MusicSettings> {
+  const kv = getKV();
+  const raw = await kv.get(KEY_MUSIC);
+  if (!raw) return { ...defaultMusicSettings };
+  try {
+    return deepMerge(defaultMusicSettings, JSON.parse(raw));
+  } catch {
+    return { ...defaultMusicSettings };
+  }
+}
+
+export async function saveMusicSettings(settings: Partial<MusicSettings>): Promise<MusicSettings> {
+  const kv = getKV();
+  const merged = deepMerge(await getMusicSettings(), settings);
+  await kv.put(KEY_MUSIC, JSON.stringify(merged));
+  return merged;
+}

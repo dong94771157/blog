@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+// 外部 http(s) 图片走服务端代理绕过防盗链（如草料二维码）；
+// data: URL 与站内路径直接引用。
+function proxiedSrc(src?: string): string | undefined {
+  if (!src) return undefined;
+  if (src.startsWith("data:") || src.startsWith("/")) return src;
+  if (/^https?:\/\//i.test(src))
+    return `/api/image?url=${encodeURIComponent(src)}`;
+  return src;
+}
+
 interface DonateCardProps {
   title: string;
   desc?: string;
@@ -102,7 +112,7 @@ export default function DonateCard({
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={currentQr}
+            src={proxiedSrc(currentQr)}
             alt={tab === "wechat" ? "微信收款码" : "支付宝收款码"}
             referrerPolicy="no-referrer"
             onError={() => setImgError(true)}

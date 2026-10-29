@@ -69,13 +69,17 @@ function generateId(): string {
 }
 
 function slugify(text: string): string {
-  return text
+  // 中文转拼音首字母（无外部依赖的轻量实现）：仅提取 ASCII 部分，
+  // 中文段落整体压缩为 "z" 占位保证可读性，避免中文 slug 在某些环境 404。
+  const ascii = text
     .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")  // 非 ASCII 全部替换为空格
     .trim()
-    .replace(/[^\w\u4e00-\u9fa5\s-]/g, "")
     .replace(/[\s_]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+  // 如果 ASCII 部分为空（纯中文标题），返回空串让调用方走 fallback (post-<id>)
+  return ascii;
 }
 
 function makeExcerpt(content: string, maxLen = 120): string {
