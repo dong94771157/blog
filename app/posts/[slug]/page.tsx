@@ -14,6 +14,7 @@ import { marked } from "marked";
 import PaywallCard from "@/components/PaywallCard";
 import DownloadBuyButton from "@/components/DownloadBuyButton";
 import Comments from "@/components/Comments";
+import ArticleToc, { type TocHeading } from "@/components/ArticleToc";
 import type { Category } from "@/lib/types";
 
 // 付费文章需根据用户登录状态动态渲染
@@ -90,10 +91,25 @@ export default async function PostPage({
     displayHtml = await marked.parse(post.content);
   }
 
+  // 提取 h2/h3 生成文章目录，并为对应标题注入 id 锚点
+  const tocHeadings: TocHeading[] = [];
+  let headingIdx = 0;
+  displayHtml = displayHtml.replace(
+    /<h([23])(\s[^>]*)?>([\s\S]*?)<\/h\1>/g,
+    (_m, lvl: string, attrs: string | undefined, inner: string) => {
+      const text = inner.replace(/<[^>]+>/g, "").trim();
+      if (!text) return _m;
+      const id = `toc-h-${headingIdx++}`;
+      tocHeadings.push({ id, text, level: Number(lvl) });
+      return `<h${lvl}${attrs || ""} id="${id}" class="scroll-mt-6">${inner}</h${lvl}>`;
+    }
+  );
+
   const payment = await getPaymentSettings();
 
   return (
     <article className="max-w-3xl mx-auto">
+      <ArticleToc headings={tocHeadings} />
       <Link
         href="/"
         className="text-sm text-gray-400 hover:text-pink-600 mb-6 inline-block transition-colors"

@@ -9,6 +9,7 @@ import ProductPromos from "@/components/ProductPromos";
 import DonateCard from "@/components/DonateCard";
 import DonorWall, { type DonorEntry } from "@/components/DonorWall";
 import Guestbook from "@/components/Guestbook";
+import AvatarPendant from "@/components/AvatarPendant";
 
 // ISR：每 60 秒重新验证
 export const revalidate = 60;
@@ -49,6 +50,8 @@ export default async function HomePage() {
 
   return (
     <div>
+      {/* 头像挂件：顶部垂下的摇曳头像，点击回到顶部 */}
+      <AvatarPendant avatarUrl={site.avatarUrl} />
       {/* Hero 区域：深色赛博 × 樱花二次元 */}
       <div className="relative overflow-hidden rounded-3xl mb-10 bg-gradient-to-br from-[#0d1b2a] via-[#2b1b3d] to-[#4a1942] px-8 py-16 text-center">
         {/* 网格 */}

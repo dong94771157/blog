@@ -282,3 +282,26 @@ body {
 .neon-text-pink {
   text-shadow: 0 0 12px rgba(244, 114, 182, 0.65), 0 0 40px rgba(244, 114, 182, 0.3);
 }
+/* 头像挂件摇曳（悬挂摆动） */
+@keyframes pendant-swing {
+  0%, 100% { transform: rotate(4deg); }
+  50% { transform: rotate(-4deg); }
+}
+.animate-pendant-swing {
+  transform-origin: top center;
+  animation: pendant-swing 3.6s ease-in-out infinite;
+}
+/* 挂件悬停暂停 + 加速轻摆 */
+.avatar-pendant:hover .animate-pendant-swing {
+  animation-duration: 1.6s;
+}
+/* 挂件点击弹跳 */
+@keyframes pendant-bounce {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(10px); }
+  70% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+.animate-pendant-bounce {
+  animation: pendant-bounce 0.5s ease;
+}
