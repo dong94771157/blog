@@ -30,3 +30,5 @@ next-env.d.ts
 
 # joycode
 .joycode/
+# workbuddy 工作目录（勿删勿提交）
+.workbuddy/

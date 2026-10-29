@@ -56,11 +56,249 @@ class MemoryStore implements KVNamespace {
 // 获取 KV 实例（导出供其他模块使用）
 export function getKV(): KVNamespace {
   const g = globalThis as Record<string, unknown>;
-  // EdgeOne 环境中绑定的 KV 变量名
+  // EdgeOne 环境中绑定的 KV 变量名（控制台绑定 KV 命名空间后生效）
   if (g.BLOG_KV) return g.BLOG_KV as KVNamespace;
+  // GitHub 分支存储（GITHUB_TOKEN 环境变量存在时启用，数据持久化到 GIT_KV_BRANCH 分支）
+  if (process.env.GITHUB_TOKEN) {
+    if (!g.__gitKV) g.__gitKV = new GitHubKV();
+    return g.__gitKV as KVNamespace;
+  }
   // 本地开发：使用内存存储（全局单例，热更新不丢失）
   if (!g.__memoryKV) g.__memoryKV = new MemoryStore();
   return g.__memoryKV as KVNamespace;
+}
+
+// ---- GitHub 分支存储（Git 即数据库）----
+// 将 KV 数据以加密文件形式持久化到仓库独立分支，部署/实例回收后数据不丢失。
+// 值使用 AES-256-GCM 加密（密钥来自 GIT_KV_SECRET），文件名仅含非敏感键名。
+
+const GITKV_DIR = "kv/";
+const GITKV_ENC_PREFIX = "enc1:";
+
+function b64EncodeBytes(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function b64DecodeBytes(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function b64EncodeText(text: string): string {
+  return b64EncodeBytes(new TextEncoder().encode(text));
+}
+
+function b64DecodeText(b64: string): string {
+  return new TextDecoder().decode(b64DecodeBytes(b64));
+}
+
+async function deriveAesKey(secret: string): Promise<CryptoKey> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+  return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptValue(value: string, secret: string): Promise<string> {
+  const key = await deriveAesKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipher = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv as unknown as BufferSource },
+    key,
+    new TextEncoder().encode(value) as unknown as BufferSource
+  );
+  return `${GITKV_ENC_PREFIX}${b64EncodeBytes(iv)}.${b64EncodeBytes(new Uint8Array(cipher))}`;
+}
+
+async function decryptValue(stored: string, secret: string): Promise<string> {
+  const body = stored.slice(GITKV_ENC_PREFIX.length);
+  const [ivB64, dataB64] = body.split(".");
+  const key = await deriveAesKey(secret);
+  const plain = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: b64DecodeBytes(ivB64) as unknown as BufferSource },
+    key,
+    b64DecodeBytes(dataB64) as unknown as BufferSource
+  );
+  return new TextDecoder().decode(plain);
+}
+
+class GitHubKV implements KVNamespace {
+  private repo = process.env.GIT_KV_REPO || "dong94771157/blog";
+  private branch = process.env.GIT_KV_BRANCH || "kv-data";
+  private token = process.env.GITHUB_TOKEN || "";
+  private secret = process.env.GIT_KV_SECRET || "";
+  private cache = new Map<string, { value: string; ts: number }>();
+  private tree: Map<string, string> | null = null;
+  private treeTs = 0;
+
+  private path(key: string): string {
+    // 键名中的冒号替换为双下划线，其余保持原样（键名均为 ASCII）
+    return GITKV_DIR + key.split(":").join("__");
+  }
+
+  private unpath(path: string): string {
+    return path.slice(GITKV_DIR.length).split("__").join(":");
+  }
+
+  private async gh(path: string, init?: RequestInit): Promise<Response> {
+    return fetch(`https://api.github.com/repos/${this.repo}/contents/${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+        "User-Agent": "blog-kv",
+        ...(init?.headers || {}),
+      },
+    });
+  }
+
+  private fresh(ts: number, ttlMs: number): boolean {
+    return Date.now() - ts < ttlMs;
+  }
+
+  private async loadTree(force = false): Promise<Map<string, string>> {
+    if (!force && this.tree && this.fresh(this.treeTs, 30_000)) return this.tree;
+    const res = await fetch(
+      `https://api.github.com/repos/${this.repo}/git/trees/${this.branch}?recursive=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "blog-kv",
+        },
+      }
+    );
+    if (!res.ok) throw new Error(`GitHubKV loadTree ${res.status}`);
+    const data = (await res.json()) as { tree: { path: string; type: string; sha: string }[] };
+    const map = new Map<string, string>();
+    for (const item of data.tree) {
+      if (item.type === "blob" && item.path.startsWith(GITKV_DIR)) {
+        map.set(item.path, item.sha);
+      }
+    }
+    this.tree = map;
+    this.treeTs = Date.now();
+    return map;
+  }
+
+  private async prepare(value: string): Promise<string> {
+    return this.secret ? encryptValue(value, this.secret) : value;
+  }
+
+  private async reveal(stored: string): Promise<string> {
+    if (stored.startsWith(GITKV_ENC_PREFIX)) {
+      if (!this.secret) throw new Error("GitHubKV: 值已加密但未配置 GIT_KV_SECRET");
+      return decryptValue(stored, this.secret);
+    }
+    return stored;
+  }
+
+  async get(key: string): Promise<string | null> {
+    const hit = this.cache.get(key);
+    if (hit && this.fresh(hit.ts, 60_000)) return hit.value;
+    try {
+      const res = await this.gh(`${this.path(key)}?ref=${this.branch}`);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`GitHubKV get ${res.status}`);
+      const data = (await res.json()) as { content?: string; sha: string };
+      const value = await this.reveal(b64DecodeText((data.content || "").replace(/\n/g, "")));
+      if (this.tree) this.tree.set(this.path(key), data.sha);
+      this.cache.set(key, { value, ts: Date.now() });
+      return value;
+    } catch (err) {
+      console.error("GitHubKV get failed:", key, err);
+      return hit ? hit.value : null; // 网络异常时回退旧缓存
+    }
+  }
+
+  async put(key: string, value: string): Promise<void> {
+    const content = await this.prepare(value);
+    let sha: string | undefined;
+    try {
+      const tree = await this.loadTree();
+      sha = tree.get(this.path(key));
+    } catch {
+      try {
+        const res = await this.gh(`${this.path(key)}?ref=${this.branch}`);
+        if (res.ok) sha = ((await res.json()) as { sha: string }).sha;
+      } catch {
+        /* 无 sha 则按新建处理 */
+      }
+    }
+    const body: Record<string, unknown> = {
+      message: `kv: ${key}`,
+      content: b64EncodeText(content),
+      branch: this.branch,
+    };
+    if (sha) body.sha = sha;
+    const res = await this.gh(this.path(key), { method: "PUT", body: JSON.stringify(body) });
+    if (!res.ok && res.status === 409 && sha) {
+      // sha 过期（并发写入），刷新后重试一次
+      const cur = await this.gh(`${this.path(key)}?ref=${this.branch}`);
+      if (cur.ok) {
+        body.sha = ((await cur.json()) as { sha: string }).sha;
+        const retry = await this.gh(this.path(key), { method: "PUT", body: JSON.stringify(body) });
+        if (!retry.ok) throw new Error(`GitHubKV put retry ${retry.status}`);
+      }
+    } else if (!res.ok) {
+      throw new Error(`GitHubKV put ${res.status}`);
+    }
+    const data = (await res.json()) as { content?: { sha?: string } };
+    if (this.tree && data.content?.sha) this.tree.set(this.path(key), data.content.sha);
+    this.cache.set(key, { value, ts: Date.now() });
+  }
+
+  async delete(key: string): Promise<void> {
+    let sha: string | undefined;
+    try {
+      const res = await this.gh(`${this.path(key)}?ref=${this.branch}`);
+      if (res.status === 404) return;
+      if (res.ok) sha = ((await res.json()) as { sha: string }).sha;
+    } catch (err) {
+      console.error("GitHubKV delete lookup failed:", key, err);
+      return;
+    }
+    const res = await this.gh(this.path(key), {
+      method: "DELETE",
+      body: JSON.stringify({ message: `kv del: ${key}`, sha, branch: this.branch }),
+    });
+    if (!res.ok) throw new Error(`GitHubKV delete ${res.status}`);
+    this.cache.delete(key);
+    if (this.tree) this.tree.delete(this.path(key));
+  }
+
+  async list(options?: {
+    prefix?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<{
+    keys: { key: string }[];
+    complete: boolean;
+    cursor: string | null;
+  }> {
+    try {
+      const tree = await this.loadTree();
+      let keys = [...tree.keys()].map((p) => this.unpath(p)).sort();
+      if (options?.prefix) keys = keys.filter((k) => k.startsWith(options.prefix!));
+      if (options?.cursor) {
+        const idx = keys.findIndex((k) => k > options.cursor!);
+        keys = idx >= 0 ? keys.slice(idx) : [];
+      }
+      const limit = options?.limit ?? 256;
+      const page = keys.slice(0, limit);
+      return {
+        keys: page.map((key) => ({ key })),
+        complete: keys.length <= limit,
+        cursor: keys.length > limit ? page[page.length - 1] : null,
+      };
+    } catch (err) {
+      console.error("GitHubKV list failed:", err);
+      return { keys: [], complete: true, cursor: null };
+    }
+  }
 }
 
 // ---- 工具函数 ----
