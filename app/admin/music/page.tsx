@@ -154,7 +154,8 @@ export default function MusicPage() {
               value={music.source}
               onChange={(e) => update("source", e.target.value as MusicSettings["source"])}
             >
-              <option value="netease">网易云音乐（默认）</option>
+              <option value="playlist">网易云精品歌单（伤感系推荐）</option>
+              <option value="netease">网易云音乐搜索</option>
               <option value="custom">自定义接口</option>
             </select>
           </div>
@@ -172,36 +173,77 @@ export default function MusicPage() {
       </div>
 
       {/* 网易云参数 */}
-      {music.source === "netease" && (
+      {(music.source === "netease" || music.source === "playlist") && (
         <div className="bg-white/80 backdrop-blur-sm border border-pink-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xl">🔍</span>
-            <h3 className="font-medium text-gray-800">网易云参数</h3>
+            <h3 className="font-medium text-gray-800">
+              {music.source === "playlist" ? "网易云歌单参数" : "网易云搜索参数"}
+            </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>搜索关键词</label>
-              <input
-                className={inputCls}
-                value={music.netease.keyword}
-                onChange={(e) => updateNetease("keyword", e.target.value)}
-                placeholder="伤感"
-              />
-              <p className="text-xs text-gray-400 mt-1">用于搜索网易云歌曲，留空则使用默认列表</p>
+          {music.source === "playlist" ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>歌单分类</label>
+                <input
+                  className={inputCls}
+                  value={music.netease.cat || "伤感"}
+                  onChange={(e) => updateNetease("cat", e.target.value)}
+                  placeholder="伤感"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  网易云歌单分类名，如：伤感、华语、民谣、流行；每次刷新随机挑选分类下的精品歌单
+                </p>
+              </div>
+              <div>
+                <label className={labelCls}>每批数量</label>
+                <input
+                  type="number"
+                  min="5"
+                  max="100"
+                  className={inputCls}
+                  value={music.netease.limit}
+                  onChange={(e) => updateNetease("limit", Number(e.target.value) || 50)}
+                />
+                <p className="text-xs text-gray-400 mt-1">每次返回的歌曲数量（5-100），自动过滤 VIP 专属歌</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className={labelCls}>搜索关键词（降级备用）</label>
+                <input
+                  className={inputCls}
+                  value={music.netease.keyword}
+                  onChange={(e) => updateNetease("keyword", e.target.value)}
+                  placeholder="伤感"
+                />
+                <p className="text-xs text-gray-400 mt-1">歌单接口异常时自动改用该关键词搜索兜底</p>
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>每批数量</label>
-              <input
-                type="number"
-                min="5"
-                max="100"
-                className={inputCls}
-                value={music.netease.limit}
-                onChange={(e) => updateNetease("limit", Number(e.target.value) || 50)}
-              />
-              <p className="text-xs text-gray-400 mt-1">每次搜索返回的歌曲数量（5-100）</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>搜索关键词</label>
+                <input
+                  className={inputCls}
+                  value={music.netease.keyword}
+                  onChange={(e) => updateNetease("keyword", e.target.value)}
+                  placeholder="伤感"
+                />
+                <p className="text-xs text-gray-400 mt-1">用于搜索网易云歌曲，留空则使用默认列表</p>
+              </div>
+              <div>
+                <label className={labelCls}>每批数量</label>
+                <input
+                  type="number"
+                  min="5"
+                  max="100"
+                  className={inputCls}
+                  value={music.netease.limit}
+                  onChange={(e) => updateNetease("limit", Number(e.target.value) || 50)}
+                />
+                <p className="text-xs text-gray-400 mt-1">每次搜索返回的歌曲数量（5-100）</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

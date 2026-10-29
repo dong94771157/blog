@@ -374,10 +374,11 @@ export const defaultAdminSettings: AdminSettings = {
 // ===== 音乐配置 =====
 export interface MusicSettings {
   enabled: boolean; // 播放器开关
-  source: "netease" | "custom"; // 音乐源：网易云 / 自定义接口
+  source: "netease" | "playlist" | "custom"; // 音乐源：网易云搜索 / 网易云精品歌单 / 自定义接口
   netease: {
-    keyword: string; // 搜索关键词
+    keyword: string; // 搜索关键词（source=netease 时使用）
     limit: number; // 每批数量
+    cat: string; // 歌单分类（source=playlist 时使用，如 "伤感"）
   };
   custom: {
     // 歌曲列表接口，GET 返回 {songs:[{id,name,artist,album,picUrl,duration}]}
@@ -391,7 +392,7 @@ export interface MusicSettings {
 export const defaultMusicSettings: MusicSettings = {
   enabled: true,
   source: "netease",
-  netease: { keyword: "伤感", limit: 50 },
+  netease: { keyword: "伤感", limit: 50, cat: "伤感" },
   custom: { listUrl: "", streamUrl: "" },
   label: "在线音乐 · 网易云",
 };
