@@ -261,7 +261,7 @@ export const defaultPaymentSettings: PaymentSettings = {
     gateway: "https://openapi.alipay.com/gateway.do",
   },
   donate: {
-    enabled: false,
+    enabled: true,
     title: "赞赏支持",
     desc: "如果文章对你有帮助，可以请我喝杯咖啡~",
     wechatQr: "",

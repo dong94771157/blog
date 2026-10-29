@@ -236,7 +236,7 @@ export default function PaymentPage() {
                   💡 自定义收款码：上传微信/支付宝收款码图片，读者扫码即可转账赞赏，无需签约支付接口。
                 </p>
                 <p className="text-xs text-gray-400 mb-3">
-                  赞赏将自动展示在首页侧边栏、每篇文章底部和赞赏页面（/donate）
+                  上传收款码后，赞赏卡片默认展示在每篇文章底部；开关控制赞赏页面（/donate）与首页侧边栏的展示
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>

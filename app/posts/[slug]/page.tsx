@@ -92,10 +92,10 @@ export default async function PostPage({
   }
 
   const payment = await getPaymentSettings();
+  // 文章底部赞赏卡片：只要配置了收款码就默认展示（不受开关影响，开关仅控制赞赏页与首页侧边栏）
+  // 付费文章未解锁时（needPaywall）不显示
   const showDonate =
-    !needPaywall &&
-    payment.donate.enabled &&
-    !!(payment.donate.wechatQr || payment.donate.alipayQr);
+    !needPaywall && !!(payment.donate.wechatQr || payment.donate.alipayQr);
 
   return (
     <article className="max-w-3xl mx-auto">
