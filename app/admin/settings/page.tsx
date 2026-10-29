@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { SiteSettings, AISettings, AdminSettings, MusicSettings } from "@/lib/types";
+import { AI_PROVIDER_PRESETS } from "@/lib/ai";
 
 type Tab = "site" | "ai" | "admin" | "music";
 
@@ -358,10 +359,17 @@ function AIForm({
   };
 
   function handleProviderChange(provider: string) {
+    const preset = AI_PROVIDER_PRESETS[provider];
+    // 切换提供商时，若当前模型不属于新厂商的预设模型，自动填入默认模型
+    const nextModel =
+      preset && preset.models.length > 0 && !preset.models.includes(ai.model)
+        ? preset.models[0]
+        : ai.model;
     setAi({
       ...ai,
       provider: provider as AISettings["provider"],
       apiUrl: PRESET_URLS[provider] || ai.apiUrl,
+      model: nextModel,
     });
   }
 

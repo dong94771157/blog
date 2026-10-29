@@ -99,6 +99,13 @@ export async function chatCompletion(
     );
   }
 
+  // EdgeOne AI 网关要求 model 使用 provider/model 格式（@makers/ 开头）
+  // 若后台残留旧格式模型名或为空，自动纠偏为默认内置模型
+  let model = (settings.model || "").trim();
+  if (settings.provider === "edgeone" && !model.startsWith("@makers/")) {
+    model = AI_PROVIDER_PRESETS.edgeone.models[0];
+  }
+
   const url = `${settings.apiUrl.replace(/\/$/, "")}/chat/completions`;
 
   const res = await fetch(url, {
@@ -108,7 +115,7 @@ export async function chatCompletion(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: settings.model,
+      model,
       messages,
       temperature: settings.temperature,
       max_tokens: 1024,
